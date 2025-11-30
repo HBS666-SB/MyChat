@@ -26,15 +26,24 @@ CONFIG += c++11
 
 SOURCES += \
         main.cpp \
-        mainwindow.cpp
+        mainwindow.cpp \
+    loginwidget.cpp
 
 HEADERS += \
-        mainwindow.h
+        mainwindow.h \
+    loginwidget.h
 
 FORMS += \
-        mainwindow.ui
+        mainwindow.ui \
+    loginwidget.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+include(comapi/comapi.pri)
+include(basewidget/basewidget.pri)
+
+RESOURCES += \
+    images.qrc
