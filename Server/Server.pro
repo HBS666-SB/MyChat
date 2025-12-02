@@ -26,10 +26,10 @@ CONFIG += c++11
 
 SOURCES += \
         main.cpp \
-        mainwindow.cpp
+        mainwindow.cpp \
 
 HEADERS += \
-        mainwindow.h
+        mainwindow.h \
 
 FORMS += \
         mainwindow.ui
@@ -41,7 +41,7 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 include(comapi/comapi.pri)
 include(basewidget/basewidget.pri)
-
+include(netdb/netdb.pri)
 
 RESOURCES += \
     images.qrc

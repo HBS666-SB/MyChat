@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include "basewidget/customwidget.h"
 
+class TcpMsgServer;
 class QButtonGroup;
 
 namespace Ui {
@@ -27,6 +28,7 @@ private:
     Ui::MainWindow *ui;
 
     QButtonGroup *m_buttonGroup;
+    TcpMsgServer *m_tcpServer;
 };
 
 #endif // MAINWINDOW_H

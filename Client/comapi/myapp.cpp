@@ -22,9 +22,9 @@ QString MyApp::m_strIniFile         = "config.ini";
 
 // 服务器相关配置
 QString MyApp::m_strHostAddr        = "10.2.229.121";
-int     MyApp::m_nMsgPort           = 60101;
-int     MyApp::m_nFilePort          = 60102;
-int     MyApp::m_nGroupPort         = 60103;
+quint16     MyApp::m_nMsgPort           = 60101;
+quint16     MyApp::m_nFilePort          = 60102;
+quint16     MyApp::m_nGroupPort         = 60103;
 
 QString MyApp::m_strUserName        = "bxz";
 QString MyApp::m_strPassword        = "111";

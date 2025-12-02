@@ -44,6 +44,7 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 include(comapi/comapi.pri)
 include(basewidget/basewidget.pri)
+include(netdb/netdb.pri)
 
 RESOURCES += \
     images.qrc

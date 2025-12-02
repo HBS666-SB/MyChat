@@ -1,172 +1,180 @@
 #include "myapp.h"
+
+#include <QApplication>
 #include <QDesktopWidget>
+#include <QSettings>
 #include <QFile>
 #include <QDir>
 #include <QProcess>
 #include <QDebug>
-#include <QSettings>
 
-// 应用程序配置目录
+// 应用程序路径
 QString MyApp::m_strAppPath         = "./";
+// 数据保存路径
 QString MyApp::m_strDataPath        = "";
-QString MyApp::m_strRecvPath        = "";
+// 数据库目录
 QString MyApp::m_strDatabasePath    = "";
+// 配置目录
 QString MyApp::m_strConfPath        = "";
-QString MyApp::m_strFacePath        = "";
+QString MyApp::m_strBackupPath      = "";
+QString MyApp::m_strRecvPath        = "";
 QString MyApp::m_strHeadPath        = "";
-QString MyApp::m_strSoundPath       = "";
-QString MyApp::m_strRecordPath      = "";
 
 // 配置文件
 QString MyApp::m_strIniFile         = "config.ini";
 
-// 服务器相关配置
-QString MyApp::m_strHostAddr        = "10.2.229.121";
-int     MyApp::m_nMsgPort           = 60101;
-int     MyApp::m_nFilePort          = 60102;
-int     MyApp::m_nGroupPort         = 60103;
-
 QString MyApp::m_strUserName        = "bxz";
 QString MyApp::m_strPassword        = "111";
-QString MyApp::m_strHeadFile        = "head-64.png";
 
 int     MyApp::m_nId                = -1;
-int     MyApp::m_nWinX              = 0;
-int     MyApp::m_nWinY              = 0;
+int     MyApp::m_nIdentyfi          = -1;
 
+// 初始化
 void MyApp::InitApp(const QString &appPath)
 {
     m_strAppPath        = appPath + "/";
+    m_strDataPath       = m_strAppPath  + "Data/";
+    m_strDatabasePath   = m_strDataPath + "Database/";
+    m_strConfPath       = m_strDataPath + "Conf/";
+    m_strBackupPath     = m_strDataPath + "Backup/";
+    m_strRecvPath       = m_strDataPath + "RecvFiles/";
+    m_strHeadPath       = m_strDataPath + "UserHeads/";
+    m_strIniFile        = m_strConfPath + "config.ini";
 
-        m_strDataPath       = m_strAppPath  + "Data/";
-        m_strRecvPath       = m_strDataPath + "RecvFiles/";
-        m_strDatabasePath   = m_strDataPath + "Database/";
-        m_strConfPath       = m_strDataPath + "Conf/";
-        m_strHeadPath       = m_strDataPath + "Head/";
-        m_strSoundPath      = m_strDataPath + "Sound/";
-        m_strRecordPath     = m_strDataPath + "Record/";
-        m_strFacePath       = m_strDataPath + "Face/";
-        m_strIniFile        = m_strConfPath + "config.ini";
+    // 检查目录
+    CheckDirs();
 
-        // 检查目录
-        CheckDirs();
+    // 创建配置文件
+    CreatorSettingFile();
 
-        // 检测音频文件
-        CheckSound();
-
-        // 创建配置文件
-        CreatorSettingFile();
-
-        // 加载系统配置
-        ReadSettingFile();
-}
-
-void MyApp::CreatorSettingFile()
-{
-
-}
-
-void MyApp::ReadSettingFile()
-{
-
-}
-
-void MyApp::SetSettingFile(const QString &group, const QString &key, const QVariant &value)
-{
-
-}
-
-QVariant MyApp::GetSettingKeyValue(const QString &group, const QString &key, const QVariant &value)
-{
-
+    // 加载系统配置
+    ReadSettingFile();
 }
 
 /**
- * @brief MyApp::CheckDirs
- * 检查文件是否存在
+ * @brief MyApp::creatorSettingFile 创建配置文件
+ */
+void MyApp::CreatorSettingFile() {
+    // 写入配置文件
+    QSettings settings(m_strIniFile, QSettings::IniFormat);
+    QString strGroups = settings.childGroups().join("");
+    if (!QFile::exists(m_strIniFile) || (strGroups.isEmpty()))
+    {
+
+        /*系统设置*/
+        settings.beginGroup("UserCfg");
+        settings.setValue("User",   m_strUserName);
+        settings.setValue("Passwd", m_strPassword);
+        settings.endGroup();
+        settings.sync();
+
+    }
+#ifdef Q_WS_QWS
+    QProcess::execute("sync");
+#endif
+}
+
+/**
+ * @brief MyApp::ReadSettingFile
+ * 读取系统配置信息
+ */
+void MyApp::ReadSettingFile()
+{
+    QSettings settings(m_strIniFile, QSettings::IniFormat);
+    settings.beginGroup("UserCfg");
+    m_strUserName = settings.value("User", "milo").toString();
+    m_strPassword = settings.value("Passwd", "123456")  .toString();
+    settings.endGroup();
+}
+
+/**
+ * @brief MyApp::setSettingFile 写入配置文件
+ * @param group                 组
+ * @param key                   key
+ * @param value                 值
+ */
+void MyApp::SetSettingFile(const QString &group, const QString &key, const QVariant &value)
+{
+    QSettings settings(m_strIniFile, QSettings::IniFormat);
+    settings.beginGroup(group);
+    settings.setValue(key, value);
+    settings.sync();
+}
+
+/**
+ * @brief MyApp::getSettingKeyValue 读取配置参数
+ * @param group
+ * @param key
+ * @return
+ */
+QVariant MyApp::GetSettingKeyValue(const QString &group, const QString &key, const QVariant &value)
+{
+    QSettings settings(m_strIniFile, QSettings::IniFormat);
+    settings.beginGroup(group);
+    return settings.value(key, value);
+}
+
+/**
+ * @brief MyApp::checkDataDir 检查数据存储目录
  */
 void MyApp::CheckDirs()
 {
-    //数据文件夹
+    // 数据文件夹
     QDir dir(m_strDataPath);
-    if(!dir.exists()){
+    if (!dir.exists()) {
         dir.mkdir(m_strDataPath);
+#ifdef Q_WS_QWS
+        QProcess::execute("sync");
+#endif
     }
 
-    //接收文件
-    dir.setPath(m_strRecvPath);
-    if(!dir.exists()){
-        dir.mkdir(m_strRecvPath);
-    }
-
-    //数据库
+    // 数据库目录
     dir.setPath(m_strDatabasePath);
-    if(!dir.exists()){
+    if (!dir.exists()) {
         dir.mkdir(m_strDatabasePath);
+#ifdef Q_WS_QWS
+        QProcess::execute("sync");
+#endif
     }
-
 
     // 配置文件目录
-    dir.setPath(m_strConfPath);
+    dir.setPath(m_strBackupPath);
     if (!dir.exists()) {
-        dir.mkdir(m_strConfPath);
+        dir.mkdir(m_strBackupPath);
+#ifdef Q_WS_QWS
+        QProcess::execute("sync");
+#endif
     }
 
-    // 表情目录
-    dir.setPath(m_strFacePath);
+    // 配置文件目录
+    dir.setPath(m_strRecvPath);
     if (!dir.exists()) {
-        dir.mkdir(m_strFacePath);
+        dir.mkdir(m_strRecvPath);
+#ifdef Q_WS_QWS
+        QProcess::execute("sync");
+#endif
     }
 
-    // 头像检测目录
+    // 配置文件目录
     dir.setPath(m_strHeadPath);
     if (!dir.exists()) {
         dir.mkdir(m_strHeadPath);
-    }
-
-    // 音频目录
-    dir.setPath(m_strSoundPath);
-    if (!dir.exists()) {
-        dir.mkdir(m_strSoundPath);
+#ifdef Q_WS_QWS
+        QProcess::execute("sync");
+#endif
     }
 }
 
-void MyApp::CheckSound()
-{
-    if(!QFile::exists(MyApp::m_strSoundPath + "message.wav")){
-        QFile::copy(":/sound/resource/sound/message.wav", MyApp::m_strSoundPath + "message.wav");
-    }
-    if(!QFile::exists(MyApp::m_strSoundPath + "msg.wav")){
-        QFile::copy(":/sound/resource/sound/msg.wav", MyApp::m_strSoundPath + "msg.wav");
-    }
-    if(!QFile::exists(MyApp::m_strSoundPath + "ringin.wav")){
-        QFile::copy(":/sound/resource/sound/ringin.wav", MyApp::m_strSoundPath + "ringin.wav");
-    }
-    if(!QFile::exists(MyApp::m_strSoundPath + "system.wav")){
-        QFile::copy(":/sound/resource/sound/system.wav", MyApp::m_strSoundPath + "system.wav");
-    }
-    if(!QFile::exists(MyApp::m_strSoundPath + "userlogon.wav")){
-        QFile::copy(":/sound/resource/sound/userlogon.wav", MyApp::m_strSoundPath + "userlogon.wav");
-    }
-
-}
-
+// 保存配置
 void MyApp::SaveConfig()
 {
-    QSettings settings(m_strIniFile,QSettings::IniFormat);
+    QSettings settings(m_strIniFile, QSettings::IniFormat);
 
-    // 保存用户信息
-    settings.beginGroup("UserConfig");
-    settings.setValue("userName",m_strUserName);
-    settings.setValue("password",m_strPassword);
+    /*系统设置*/
+    settings.beginGroup("UserCfg");
+    settings.setValue("User",   m_strUserName);
+    settings.setValue("Passwd", m_strPassword);
     settings.endGroup();
 
-    //保存服务器信息
-    settings.beginGroup("Server");
-    settings.setValue("ServerIP", m_strHostAddr);
-    settings.setValue("MsgPort",  m_nMsgPort);
-    settings.setValue("FilePort",  m_nFilePort);
-    settings.setValue("GroupPort",  m_nGroupPort);
-    settings.endGroup();
     settings.sync();
 }

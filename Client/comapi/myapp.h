@@ -24,9 +24,9 @@ public:
     static QString m_strIniFile;         // 配置文件
 
     static QString m_strHostAddr;       // 服务器地址配置
-    static int     m_nMsgPort;          // 聊天消息服务器端口配置
-    static int     m_nFilePort;          // 文件转发服务器端口配置
-    static int     m_nGroupPort;        // 群组聊天窗口
+    static quint16     m_nMsgPort;          // 聊天消息服务器端口配置
+    static quint16     m_nFilePort;          // 文件转发服务器端口配置
+    static quint16     m_nGroupPort;        // 群组聊天窗口
 
     static QString m_strUserName;       // 用户名
     static QString m_strPassword;       // 用户密码

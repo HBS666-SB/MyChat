@@ -1,6 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-
+#include "netdb/myserver.h"
 #include <QDebug>
 #include <QButtonGroup>
 
@@ -22,6 +22,12 @@ MainWindow::MainWindow(QWidget *parent) :
     m_buttonGroup->addButton(ui->btnDataBackup,5);
 
     connect(m_buttonGroup,SIGNAL(buttonClicked(int)),this,SLOT(sltButtonClicked(int)));
+
+    m_tcpServer = new TcpMsgServer(this);
+    m_tcpServer->StartListen(60101);
+    ui->labelHostAddr->setText(m_tcpServer->getHostAddress().toString());
+
+
 }
 
 MainWindow::~MainWindow()

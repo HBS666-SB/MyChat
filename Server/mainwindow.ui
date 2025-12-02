@@ -250,7 +250,7 @@
             </rect>
            </property>
            <property name="text">
-            <string>admin</string>
+            <string>bxz</string>
            </property>
           </widget>
           <widget class="QLineEdit" name="lineEditPasswd">
@@ -263,7 +263,7 @@
             </rect>
            </property>
            <property name="text">
-            <string>123456</string>
+            <string>111</string>
            </property>
            <property name="echoMode">
             <enum>QLineEdit::Password</enum>
