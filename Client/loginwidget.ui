@@ -119,7 +119,7 @@
              <string notr="true">color: #FFFFFF;</string>
             </property>
             <property name="text">
-             <string/>
+             <string>正在连接服务器...</string>
             </property>
            </widget>
           </item>
@@ -343,10 +343,17 @@
              </layout>
             </item>
             <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_3">
+             <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="0,3">
               <property name="spacing">
                <number>15</number>
               </property>
+              <item>
+               <widget class="QPushButton" name="btnReister">
+                <property name="text">
+                 <string>注册新用户</string>
+                </property>
+               </widget>
+              </item>
               <item>
                <widget class="QPushButton" name="btnLogin">
                 <property name="focusPolicy">

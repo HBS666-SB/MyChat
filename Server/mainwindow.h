@@ -24,6 +24,14 @@ private slots:
     void on_btnQuit_clicked();
     void sltButtonClicked(int index);
 
+    void on_btnWinClose_clicked();
+
+    void on_btnLogin_clicked();
+
+    void on_btnUserInsert_clicked();
+
+    void on_btnUserRefresh_clicked();
+
 private:
     Ui::MainWindow *ui;
 

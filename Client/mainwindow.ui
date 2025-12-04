@@ -343,7 +343,7 @@
       <string notr="true"/>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>3</number>
      </property>
      <widget class="QWidget" name="page2">
       <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -415,7 +415,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QWidget" name="frindListWidget" native="true"/>
+        <widget class="QQListWidget" name="frindListWidget" native="true"/>
        </item>
       </layout>
      </widget>
@@ -489,7 +489,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QWidget" name="groupListWidget" native="true"/>
+        <widget class="QQListWidget" name="groupListWidget" native="true"/>
        </item>
       </layout>
      </widget>
@@ -563,7 +563,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QWidget" name="convationListWidget" native="true"/>
+        <widget class="QQListWidget" name="convationListWidget" native="true"/>
        </item>
       </layout>
      </widget>
@@ -637,7 +637,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QWidget" name="widget_5" native="true"/>
+        <widget class="QQListWidget" name="widget_5" native="true"/>
        </item>
       </layout>
      </widget>
@@ -963,6 +963,14 @@
   </layout>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>QQListWidget</class>
+   <extends>QWidget</extends>
+   <header location="global">basewidget/qqlist/qqlistwidget.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="images.qrc"/>
  </resources>

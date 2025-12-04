@@ -18,10 +18,17 @@ public:
     ~LoginWidget();
 
     void sendLogin();
+    void loginSuccess();
 
 private slots:
     void on_btnLogin_clicked();
     void sltStatus(const quint8 &status);
+
+    void on_btnWinMenu_clicked();
+
+    void on_btnCancel_clicked();
+
+    void on_btnReister_clicked();
 
 private:
     Ui::LoginWidget *ui;

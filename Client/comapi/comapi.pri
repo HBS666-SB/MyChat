@@ -5,3 +5,4 @@ HEADERS += \
 
 SOURCES += \
     $$PWD/myapp.cpp
+

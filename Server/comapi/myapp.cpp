@@ -115,56 +115,38 @@ QVariant MyApp::GetSettingKeyValue(const QString &group, const QString &key, con
 }
 
 /**
- * @brief MyApp::checkDataDir 检查数据存储目录
+ * @brief MyApp::CheckDirs 检查目录
  */
 void MyApp::CheckDirs()
 {
-    // 数据文件夹
-    QDir dir(m_strDataPath);
-    if (!dir.exists()) {
-        dir.mkdir(m_strDataPath);
-#ifdef Q_WS_QWS
-        QProcess::execute("sync");
-#endif
-    }
+    // 目录列表
+    QStringList dirs = {
+        m_strDataPath,
+        m_strDatabasePath,
+        m_strConfPath,
+        m_strBackupPath,
+        m_strRecvPath,
+        m_strHeadPath
+    };
 
-    // 数据库目录
-    dir.setPath(m_strDatabasePath);
-    if (!dir.exists()) {
-        dir.mkdir(m_strDatabasePath);
-#ifdef Q_WS_QWS
-        QProcess::execute("sync");
-#endif
-    }
+    QDir dir;
+    // 封装目录创建逻辑的匿名函数
+    auto createDir = [&dir](const QString& dirPath) {
+        if (!dir.exists(dirPath)) {
+            bool createOk = dir.mkpath(dirPath);
+            if (createOk) {
+                qDebug() << "目录创建成功：" << dirPath;
+            } else {
+                qWarning() << "目录创建失败：" << dirPath;
+            }
+        }
+    };
 
-    // 配置文件目录
-    dir.setPath(m_strBackupPath);
-    if (!dir.exists()) {
-        dir.mkdir(m_strBackupPath);
-#ifdef Q_WS_QWS
-        QProcess::execute("sync");
-#endif
-    }
-
-    // 配置文件目录
-    dir.setPath(m_strRecvPath);
-    if (!dir.exists()) {
-        dir.mkdir(m_strRecvPath);
-#ifdef Q_WS_QWS
-        QProcess::execute("sync");
-#endif
-    }
-
-    // 配置文件目录
-    dir.setPath(m_strHeadPath);
-    if (!dir.exists()) {
-        dir.mkdir(m_strHeadPath);
-#ifdef Q_WS_QWS
-        QProcess::execute("sync");
-#endif
+    // 遍历执行创建
+    foreach (QString dirPath, dirs) {
+        createDir(dirPath);
     }
 }
-
 // 保存配置
 void MyApp::SaveConfig()
 {

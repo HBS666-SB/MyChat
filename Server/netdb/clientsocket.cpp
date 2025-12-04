@@ -1,4 +1,6 @@
 #include "clientsocket.h"
+#include "databasemag.h"
+#include "databasemag.h"
 #include "comapi/unit.h"
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -25,7 +27,7 @@ ClientSocket::~ClientSocket()
 
 int ClientSocket::GetUserId() const
 {
-
+    return  m_nId;
 }
 
 void ClientSocket::Close()
@@ -47,7 +49,7 @@ void ClientSocket::SltSendMessage(const quint8 &type, const QJsonValue &jsonVal)
     QJsonDocument document;
     document.setObject(jsonObj);
 
-    qDebug() << "m_tcpSocket->write:" << document.toJson(QJsonDocument::Compact);
+    qDebug() << "服务器端m_tcpSocket->write:" << document.toJson(QJsonDocument::Compact);
 
     m_tcpSocket->write(document.toJson(QJsonDocument::Compact));
 }
@@ -60,6 +62,8 @@ void ClientSocket::SltConnected()
 void ClientSocket::SltDisconnected()
 {
     qDebug() << "服务器端socket检测到有用户下线";
+    DataBaseMag::getInstance()->UpdateUserStatus(m_nId, OffLine);
+    Q_EMIT signalDisConnected();
 }
 
 void ClientSocket::SltReadyRead()
@@ -86,19 +90,27 @@ void ClientSocket::SltReadyRead()
         ParseLogin(dataVal);
         break;
     }
-
+    case Register:
+        ParseReister(dataVal);
+        break;
     }
 }
 
 void ClientSocket::ParseLogin(const QJsonValue &dataVal)
 {
     if(dataVal.isObject()){
-        qDebug() << "登录";
         QJsonObject dataObj = dataVal.toObject();
-        if(dataObj.value("name") == "bxz" && dataObj.value("passwd") == "111")
-        {
-            SltSendMessage(LoginSuccess, LoginSuccess);
-        }
+        QString strName = dataObj.value("name").toString();
+        QString strPwd = dataObj.value("passwd").toString();
+//        qDebug() << "登录" << strName << strPwd;
+        QJsonObject jsonObj = DataBaseMag::getInstance()->userLogin(strName, strPwd);
+
+        m_nId = jsonObj.value("id").toInt();
+
+        if (m_nId > 0) emit signalConnected();
+        // 发送查询结果至客户端
+        SltSendMessage(Login, jsonObj);
+
     }
 }
 
@@ -119,7 +131,13 @@ void ClientSocket::ParseUpdateUserHead(const QJsonValue &dataVal)
 
 void ClientSocket::ParseReister(const QJsonValue &dataVal)
 {
+    if(dataVal.isObject()){
+        QJsonObject jsonObj = dataVal.toObject();
+        QString name = jsonObj.value("name").toString();
+        QString passwd = jsonObj.value("passwd").toString();
 
+        SltSendMessage(DataBaseMag::getInstance()->userRegister(name,passwd), jsonObj);
+    }
 }
 
 void ClientSocket::ParseAddFriend(const QJsonValue &dataVal)

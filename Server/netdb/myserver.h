@@ -15,7 +15,6 @@ class MyServer : public QObject {
 public:
     explicit MyServer(QObject *parent = nullptr);
     ~MyServer();
-    QHostAddress getHostAddress();
 
     bool StartListen(int port = 6666);
     void CloseListen();

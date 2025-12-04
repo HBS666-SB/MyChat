@@ -156,8 +156,8 @@
          <widget class="QWidget" name="widgetUser" native="true">
           <property name="geometry">
            <rect>
-            <x>600</x>
-            <y>160</y>
+            <x>610</x>
+            <y>150</y>
             <width>282</width>
             <height>147</height>
            </rect>
@@ -174,101 +174,87 @@
             <height>147</height>
            </size>
           </property>
-          <widget class="QPushButton" name="btnExit">
-           <property name="geometry">
-            <rect>
-             <x>36</x>
-             <y>109</y>
-             <width>75</width>
-             <height>23</height>
-            </rect>
-           </property>
-           <property name="focusPolicy">
-            <enum>Qt::NoFocus</enum>
-           </property>
-           <property name="text">
-            <string>退出</string>
-           </property>
-           <property name="icon">
-            <iconset resource="images.qrc">
-             <normaloff>:/resource/images/ic_cancel.png</normaloff>:/resource/images/ic_cancel.png</iconset>
-           </property>
-          </widget>
-          <widget class="QPushButton" name="btnLogin">
-           <property name="geometry">
-            <rect>
-             <x>173</x>
-             <y>110</y>
-             <width>75</width>
-             <height>23</height>
-            </rect>
-           </property>
-           <property name="focusPolicy">
-            <enum>Qt::NoFocus</enum>
-           </property>
-           <property name="text">
-            <string>登录</string>
-           </property>
-           <property name="icon">
-            <iconset resource="images.qrc">
-             <normaloff>:/resource/images/ic_ok.png</normaloff>:/resource/images/ic_ok.png</iconset>
-           </property>
-          </widget>
-          <widget class="QLabel" name="label">
-           <property name="geometry">
-            <rect>
-             <x>33</x>
-             <y>22</y>
-             <width>36</width>
-             <height>16</height>
-            </rect>
-           </property>
-           <property name="text">
-            <string>用名：</string>
-           </property>
-          </widget>
-          <widget class="QLabel" name="label_2">
-           <property name="geometry">
-            <rect>
-             <x>33</x>
-             <y>66</y>
-             <width>36</width>
-             <height>16</height>
-            </rect>
-           </property>
-           <property name="text">
-            <string>密码：</string>
-           </property>
-          </widget>
-          <widget class="QLineEdit" name="lineEditUser">
-           <property name="geometry">
-            <rect>
-             <x>78</x>
-             <y>22</y>
-             <width>171</width>
-             <height>20</height>
-            </rect>
-           </property>
-           <property name="text">
-            <string>bxz</string>
-           </property>
-          </widget>
-          <widget class="QLineEdit" name="lineEditPasswd">
-           <property name="geometry">
-            <rect>
-             <x>78</x>
-             <y>66</y>
-             <width>171</width>
-             <height>20</height>
-            </rect>
-           </property>
-           <property name="text">
-            <string>111</string>
-           </property>
-           <property name="echoMode">
-            <enum>QLineEdit::Password</enum>
-           </property>
-          </widget>
+          <layout class="QVBoxLayout" name="verticalLayout_15">
+           <item>
+            <layout class="QVBoxLayout" name="verticalLayout_14">
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_7">
+               <item>
+                <layout class="QVBoxLayout" name="verticalLayout_12">
+                 <item>
+                  <widget class="QLabel" name="label">
+                   <property name="text">
+                    <string>用名：</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="label_2">
+                   <property name="text">
+                    <string>密码：</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+               <item>
+                <layout class="QVBoxLayout" name="verticalLayout_13">
+                 <item>
+                  <widget class="QLineEdit" name="lineEditUser">
+                   <property name="text">
+                    <string>admin</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLineEdit" name="lineEditPasswd">
+                   <property name="text">
+                    <string>123456</string>
+                   </property>
+                   <property name="echoMode">
+                    <enum>QLineEdit::Password</enum>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_4">
+               <item>
+                <widget class="QPushButton" name="btnExit">
+                 <property name="focusPolicy">
+                  <enum>Qt::NoFocus</enum>
+                 </property>
+                 <property name="text">
+                  <string>退出</string>
+                 </property>
+                 <property name="icon">
+                  <iconset resource="images.qrc">
+                   <normaloff>:/resource/images/ic_cancel.png</normaloff>:/resource/images/ic_cancel.png</iconset>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="btnLogin">
+                 <property name="focusPolicy">
+                  <enum>Qt::NoFocus</enum>
+                 </property>
+                 <property name="text">
+                  <string>登录</string>
+                 </property>
+                 <property name="icon">
+                  <iconset resource="images.qrc">
+                   <normaloff>:/resource/images/ic_ok.png</normaloff>:/resource/images/ic_ok.png</iconset>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+            </layout>
+           </item>
+          </layout>
          </widget>
         </widget>
         <widget class="QWidget" name="MainWidget">
@@ -489,7 +475,7 @@
              <item>
               <widget class="QStackedWidget" name="stackedWidgetFunc">
                <property name="currentIndex">
-                <number>0</number>
+                <number>3</number>
                </property>
                <widget class="QWidget" name="page">
                 <layout class="QVBoxLayout" name="verticalLayout_11">

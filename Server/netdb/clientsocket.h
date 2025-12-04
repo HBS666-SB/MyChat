@@ -26,7 +26,7 @@ public slots:
 
 private:
     QTcpSocket *m_tcpSocket;
-    int m_nId;
+    int m_nId;  //储存用户的id（唯一字段）识别每个套接字对应的用户
 
 public slots:
     // 消息回发

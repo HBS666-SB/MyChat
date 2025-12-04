@@ -14,27 +14,11 @@ MyServer::~MyServer()
     if (m_tcpServer->isListening()) m_tcpServer->close();
 }
 
-QHostAddress MyServer::getHostAddress()
-{
-    QHostInfo info = QHostInfo::fromName(QHostInfo::localHostName());
-    QHostAddress Ip("");
-    foreach(QHostAddress address, info.addresses())
-    {
-        if(address.protocol() == QAbstractSocket::IPv4Protocol){
-            Ip = address;
-            break;
-        }
-    }
-    return Ip;
-}
 
 bool MyServer::StartListen(int port)
 {
-    if(!getHostAddress().isNull()){
-        m_tcpServer->listen(QHostAddress::Any,static_cast<quint16>(port));
-        return true;
-    }
-    return false;
+    m_tcpServer->listen(QHostAddress::Any,static_cast<quint16>(port));
+    return true;
 }
 
 void MyServer::CloseListen()

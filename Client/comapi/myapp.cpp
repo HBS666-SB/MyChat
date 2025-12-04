@@ -28,7 +28,7 @@ quint16     MyApp::m_nGroupPort         = 60103;
 
 QString MyApp::m_strUserName        = "bxz";
 QString MyApp::m_strPassword        = "111";
-QString MyApp::m_strHeadFile        = "head-64.png";
+QString MyApp::m_strHeadFile        = "default.png";
 
 int     MyApp::m_nId                = -1;
 int     MyApp::m_nWinX              = 0;
@@ -38,27 +38,29 @@ void MyApp::InitApp(const QString &appPath)
 {
     m_strAppPath        = appPath + "/";
 
-        m_strDataPath       = m_strAppPath  + "Data/";
-        m_strRecvPath       = m_strDataPath + "RecvFiles/";
-        m_strDatabasePath   = m_strDataPath + "Database/";
-        m_strConfPath       = m_strDataPath + "Conf/";
-        m_strHeadPath       = m_strDataPath + "Head/";
-        m_strSoundPath      = m_strDataPath + "Sound/";
-        m_strRecordPath     = m_strDataPath + "Record/";
-        m_strFacePath       = m_strDataPath + "Face/";
-        m_strIniFile        = m_strConfPath + "config.ini";
+    m_strDataPath       = m_strAppPath  + "Data/";
+    m_strRecvPath       = m_strDataPath + "RecvFiles/";
+    m_strDatabasePath   = m_strDataPath + "Database/";
+    m_strConfPath       = m_strDataPath + "Conf/";
+    m_strHeadPath       = m_strDataPath + "Head/";
+    m_strSoundPath      = m_strDataPath + "Sound/";
+    m_strRecordPath     = m_strDataPath + "Record/";
+    m_strFacePath       = m_strDataPath + "Face/";
+    m_strIniFile        = m_strConfPath + "config.ini";
 
-        // 检查目录
-        CheckDirs();
+    // 检查目录
+    CheckDirs();
 
-        // 检测音频文件
-        CheckSound();
+    // 检测音频文件
+    CheckSound();
 
-        // 创建配置文件
-        CreatorSettingFile();
+    // 创建配置文件
+    CreatorSettingFile();
 
-        // 加载系统配置
-        ReadSettingFile();
+    // 加载系统配置
+    ReadSettingFile();
+
+    setDefaultHead();
 }
 
 void MyApp::CreatorSettingFile()
@@ -87,48 +89,22 @@ QVariant MyApp::GetSettingKeyValue(const QString &group, const QString &key, con
  */
 void MyApp::CheckDirs()
 {
-    //数据文件夹
-    QDir dir(m_strDataPath);
-    if(!dir.exists()){
-        dir.mkdir(m_strDataPath);
-    }
+    auto createDir = [](const QString& path) {
+        QDir dir(path);
+        // mkpath() 自动创建多级目录，返回bool表示是否成功
+        if (!dir.exists() && !dir.mkpath(".")) {
+            qWarning() << "创建目录失败：" << path;
+        }
+    };
 
-    //接收文件
-    dir.setPath(m_strRecvPath);
-    if(!dir.exists()){
-        dir.mkdir(m_strRecvPath);
-    }
-
-    //数据库
-    dir.setPath(m_strDatabasePath);
-    if(!dir.exists()){
-        dir.mkdir(m_strDatabasePath);
-    }
-
-
-    // 配置文件目录
-    dir.setPath(m_strConfPath);
-    if (!dir.exists()) {
-        dir.mkdir(m_strConfPath);
-    }
-
-    // 表情目录
-    dir.setPath(m_strFacePath);
-    if (!dir.exists()) {
-        dir.mkdir(m_strFacePath);
-    }
-
-    // 头像检测目录
-    dir.setPath(m_strHeadPath);
-    if (!dir.exists()) {
-        dir.mkdir(m_strHeadPath);
-    }
-
-    // 音频目录
-    dir.setPath(m_strSoundPath);
-    if (!dir.exists()) {
-        dir.mkdir(m_strSoundPath);
-    }
+    // 依次检查创建各目录
+    createDir(m_strDataPath);
+    createDir(m_strRecvPath);
+    createDir(m_strDatabasePath);
+    createDir(m_strConfPath);
+    createDir(m_strFacePath);
+    createDir(m_strHeadPath);
+    createDir(m_strSoundPath);
 }
 
 void MyApp::CheckSound()
@@ -169,4 +145,18 @@ void MyApp::SaveConfig()
     settings.setValue("GroupPort",  m_nGroupPort);
     settings.endGroup();
     settings.sync();
+}
+
+void MyApp::setDefaultHead()
+{
+    QString localFullPath = MyApp::m_strHeadPath + "default.png";
+    if (QFile::exists(localFullPath)) {
+        return;
+    }
+    QString resPath(":/resource/head/head-64.png");
+    if (!QFile::copy(resPath, localFullPath)) {
+        qWarning() << "复制失败：" << resPath << "→" << localFullPath;
+    } else {
+        qDebug() << "复制成功：" << resPath << "→" << localFullPath;
+    }
 }

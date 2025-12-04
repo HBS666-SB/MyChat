@@ -53,6 +53,9 @@ public:
     static void CheckSound();
 
     static void SaveConfig();
+
+    static void setDefaultHead();
+
 };
 
 #endif // MYAPP_H
