@@ -38,7 +38,7 @@ void QQListViewGroup::mousePressEvent(QMouseEvent *ev)
         return ;
     }
 
-    if (cell == NULL) return;
+    if (cell == nullptr) return;
 
     cell->isOpen = !cell->isOpen;
     if (cell->isOpen)

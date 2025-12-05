@@ -30,6 +30,9 @@ private slots:
     void setHead(const QString &headFile);  //设置头像
     void onAddFriendMenuDidSelected(QAction* action);
     void SltFriendsClicked(QQCell *action);
+    void onChildPopMenuDidSelected(QAction* action);
+
+    void sltStatus(const quint8 &status);
 private:
     // 添加系统菜单处理
     void InitSysMenu();

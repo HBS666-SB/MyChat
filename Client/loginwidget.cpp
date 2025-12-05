@@ -86,9 +86,15 @@ void LoginWidget::on_btnLogin_clicked()     //登录
 
 void LoginWidget::on_btnReister_clicked()   //注册
 {
+    QString name = ui->lineEditUser->text();
+    QString passwd = ui->lineEditPasswd->text();
+    if(name.isEmpty() || passwd.isEmpty()){
+        QMessageBox::warning(this,"注册","用户名或密码不能为空");
+        return;
+    }
     QJsonObject json;
-    json.insert("name",ui->lineEditUser->text());
-    json.insert("passwd",ui->lineEditPasswd->text());
+    json.insert("name",name);
+    json.insert("passwd",passwd);
     m_tcpSocket->sendMessage(Register, json);
 }
 

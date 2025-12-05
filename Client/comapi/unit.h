@@ -167,6 +167,7 @@ typedef enum {
 
     AddFriendOk,
     AddFriendFailed,
+    AddFriendFailed_NoneUser,   //用户不存在
 } E_STATUS;
 
 #endif // UNIT

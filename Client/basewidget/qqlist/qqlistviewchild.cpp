@@ -22,7 +22,7 @@ void QQListViewChild::mousePressEvent(QMouseEvent *ev)
         emit onChildDidSelected(this);
     }
     else if (Qt::RightButton == ev->button()) {
-        if (NULL == this->cell) return;
+        if (nullptr == this->cell) return;
         Q_EMIT signalRightClicked(this->cell);
 
         QQPopMenuWidget::mousePressEvent(ev);

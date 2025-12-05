@@ -9,7 +9,7 @@ void QQPopMenuWidget::mousePressEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::RightButton)
     {
-        if (NULL == popMenu)
+        if (nullptr == popMenu)
         {
             return ;
         }

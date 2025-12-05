@@ -15,7 +15,7 @@ public:
     explicit ClientSocket(QObject *parent = 0, QTcpSocket *tcpSocket = NULL);
     ~ClientSocket();
 
-    int GetUserId() const;
+    int GetUserId();
     void Close();
 signals:
     void signalConnected();

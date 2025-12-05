@@ -74,7 +74,21 @@ QVector<QJsonObject> DatabaseMsg::QueryHistory(const int &id, const int &count)
 
 }
 
-bool DatabaseMsg::isMyFriend(int, QString)
+bool DatabaseMsg::isMyFriend(int userId, QString friendName)
 {
+    if(userId <= 0 || friendName.isEmpty()){
+         qWarning() << "isMyFriend: 无效的输入参数，userId=" << userId << " friendName=" << friendName;
+        return false;
+    }
+    QSqlQuery query(userdb);
+    QString sql = "SELECT id FROM FRIEND WHERE userId = :userId AND name = :friendName LIMIT 1";
 
+    query.prepare(sql);
+    query.bindValue(":userId", userId);
+    query.bindValue(":friendName", friendName);
+    if(!query.exec()){
+        qDebug() << "查询失败";
+        return false;
+    }
+    return query.next();
 }

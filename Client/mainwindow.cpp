@@ -10,6 +10,7 @@
 #include <QMessageBox>
 #include "netdb/databasemsg.h"
 #include <netdb/databasemsg.h>
+#include "comapi/unit.h"
 
 MainWindow::MainWindow(MySocket *socket, QWidget *parent) :
     CustomMoveWidget(parent),
@@ -29,6 +30,7 @@ MainWindow::MainWindow(MySocket *socket, QWidget *parent) :
     m_buttonGroup->addButton(ui->btnApplay,3);
 
     connect(m_buttonGroup,SIGNAL(buttonClicked(int)),this,SLOT(sltButtonClicked(int)));
+    connect(m_tcpSocket,&MySocket::signalStatus,this,&MainWindow::sltStatus);
     connect(m_tcpSocket,&MySocket::signalConnectSuccess,this,[=](){
         qDebug() << "MainWindow连接服务器成功";
     });
@@ -107,6 +109,7 @@ void MainWindow::SltTrayIcoClicked(QSystemTrayIcon::ActivationReason reason)
  */
 void MainWindow::InitQQListMenu()
 {
+    //默认项
     QQCell *myFriend = new QQCell;
     myFriend->groupName = QString(tr("我的好友"));
     myFriend->isOpen = false;
@@ -124,6 +127,29 @@ void MainWindow::InitQQListMenu()
     ui->frindListWidget->insertQQCell(blacklist);
 
     connect(ui->frindListWidget, SIGNAL(onChildDidDoubleClicked(QQCell*)), this, SLOT(SltFriendsClicked(QQCell*)));
+
+    //菜单
+    QMenu *addFriend = new QMenu(this);
+    addFriend->addAction(tr("添加好友"));
+    addFriend->addAction(tr("刷新"));
+    addFriend->addSeparator();
+    addFriend->addAction(tr("删除该组"));
+    ui->frindListWidget->setGroupPopMenu(addFriend);
+    connect(addFriend,SIGNAL(triggered(QAction*)),this,SLOT(onAddFriendMenuDidSelected(QAction*)));
+
+    //子菜单
+    QMenu *childMenu = new QMenu(this);
+    childMenu->addAction(tr("发送即时消息"));
+    childMenu->addSeparator();
+    childMenu->addAction("移动到黑名单");
+    childMenu->addAction("删除联系人");
+    //***********疑惑************
+    QMenu *groupListMenu = new QMenu(tr("移动联系人至"));
+    childMenu->addMenu(groupListMenu);
+
+    // childMenu->addAction(tr("创建讨论组"));
+    connect(childMenu, SIGNAL(triggered(QAction*)), this, SLOT(onChildPopMenuDidSelected(QAction*)));
+    ui->frindListWidget->setChildPopMenu(childMenu);
 
 
 }
@@ -185,7 +211,7 @@ void MainWindow::setHead(const QString &headFile)
                           "background-position: center; "
                           "background-size: cover; "
                           "border-radius: 5px}")
-                      .arg(absPath);
+            .arg(absPath);
     ui->widgetHead->setStyleSheet(qss);
     ui->widgetHead->setAutoFillBackground(true);
     ui->widgetHead->update();
@@ -196,30 +222,37 @@ void MainWindow::onAddFriendMenuDidSelected(QAction *action)
 {
     if (!action->text().compare(tr("添加好友")))
     {
-        QString text = QInputDialog::getText(this, "加好友","bxz");
+        bool isOk;
+        QString text = QInputDialog::getText(this, "加好友", "请输入要添加的好友名称",QLineEdit::Normal,QString(),&isOk);
 
-        if (!text.isEmpty()) {
-            // 首先判断该用户是否已经是我的好友了
-            if (DatabaseMsg::getInstance()->isMyFriend(MyApp::m_nId, text)) {
-                QMessageBox::information(this,"", "该用户已经是你的好友了！");
-                return;
-            }
-
-            // 构建 Json 对象
-            QJsonObject json;
-            json.insert("id", m_tcpSocket->GetUserId());
-            json.insert("name", text);
-
-//            m_tcpSocket->SltSendMessage(AddFriend, json);
+        if (!isOk) {
+            return;
         }
+
+        if(text.isEmpty())
+        {
+            QMessageBox::warning(this,"添加好友", "请输入用户名");
+            return;
+        }
+        // 首先判断该用户是否已经是我的好友了
+        if (DatabaseMsg::getInstance()->isMyFriend(MyApp::m_nId, text)) {
+            QMessageBox::information(this,"", "该用户已经是你的好友了！");
+            return;
+        }
+        // 构建 Json 对象
+        QJsonObject json;
+        json.insert("id", m_tcpSocket->GetUserId());
+        json.insert("name", text);
+
+        m_tcpSocket->sendMessage(AddFriend, json);
     }
     else if (!action->text().compare(tr("刷新")))
     {
         // 上线的时候获取当前好友的状态
-//        QJsonArray friendArr = DataBaseMagr::Instance()->GetMyFriend(MyApp::m_nId);
+        //        QJsonArray friendArr = DataBaseMagr::Instance()->GetMyFriend(MyApp::m_nId);
 
         // 组织Jsonarror
-//        m_tcpSocket->SltSendMessage(RefreshFriends, friendArr);
+        //        m_tcpSocket->SltSendMessage(RefreshFriends, friendArr);
     }
     else if (!action->text().compare(tr("删除该组")))
     {
@@ -230,4 +263,31 @@ void MainWindow::onAddFriendMenuDidSelected(QAction *action)
 void MainWindow::SltFriendsClicked(QQCell *action)
 {
 
+}
+
+void MainWindow::onChildPopMenuDidSelected(QAction *action)
+{
+
+}
+
+void MainWindow::sltStatus(const quint8 &status)
+{
+    qDebug() << "mainwindow sltstatus";
+    switch (status) {
+    case AddFriendOk:
+    {
+        QMessageBox::information(this,"添加好友","好友申请发送成功！");
+        break;
+    }
+    case AddFriendFailed:
+    {
+        QMessageBox::information(this,"添加好友","系统故障，添加好友失败");
+        break;
+    }
+    case AddFriendFailed_NoneUser:
+    {
+        QMessageBox::warning(this,"添加好友","用户名不存在");
+        break;
+    }
+    }
 }

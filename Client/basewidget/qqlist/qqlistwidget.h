@@ -20,7 +20,7 @@ class QQListWidget : public QListWidget
 {
     Q_OBJECT
 public:
-    explicit QQListWidget(QWidget *parent = 0);
+    explicit QQListWidget(QWidget *parent = nullptr);
 
     QQCell *GetRightClickedCell();
 signals:

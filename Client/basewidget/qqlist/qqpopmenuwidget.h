@@ -12,7 +12,7 @@ class QQPopMenuWidget : public CustomWidget
 {
     Q_OBJECT
 public:
-    explicit QQPopMenuWidget(QWidget *parent = 0);
+    explicit QQPopMenuWidget(QWidget *parent = nullptr);
 
 signals:
     void onpopmenuwillshow(QQPopMenuWidget * widget, QMenu *menu);

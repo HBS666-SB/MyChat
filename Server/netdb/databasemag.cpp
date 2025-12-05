@@ -55,6 +55,9 @@ void DataBaseMag::createDatabase()
 {
     QSqlQuery query(userdb);
     QString sql;
+
+    query.exec("PRAGMA foreign_keys = ON;");    // 启用SQLite外键约束
+
     sql = QString("CREATE TABLE IF NOT EXISTS USERINFO (");
     sql.append(QString("id INTEGER PRIMARY KEY AUTOINCREMENT,"));
     sql.append(QString("name VARCHAR(30) NOT NULL UNIQUE,"));
@@ -79,6 +82,20 @@ void DataBaseMag::createDatabase()
     sql.append(QString("identity INTEGER NOT NULL DEFAULT 0,"));
     sql.append(QString("join_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,"));
     sql.append(QString("UNIQUE (group_id, user_id));"));
+    query.exec(sql);
+
+    sql = QString("CREATE TABLE IF NOT EXISTS FRIEND (");
+    sql.append(QString("id INTEGER PRIMARY KEY AUTOINCREMENT,"));          // 好友记录ID（自增主键）
+    sql.append(QString("user_id INTEGER NOT NULL,"));                     // 发起添加的用户ID（我的ID）
+    sql.append(QString("friend_id INTEGER NOT NULL,"));                   // 被添加的好友ID（对方ID）
+    sql.append(QString("remark VARCHAR(30) DEFAULT '',"));                // 好友备注名（自定义）
+    sql.append(QString("status INTEGER NOT NULL DEFAULT 0,"));            // 好友状态（0=待验证/1=已通过/2=已拉黑）
+    sql.append(QString("add_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,")); // 添加时间
+    sql.append(QString("update_time DATETIME DEFAULT CURRENT_TIMESTAMP,"));// 状态更新时间
+    // 外键关联USERINFO，级联删除
+    sql.append(QString("FOREIGN KEY (user_id) REFERENCES USERINFO(id) ON DELETE CASCADE,"));
+    sql.append(QString("FOREIGN KEY (friend_id) REFERENCES USERINFO(id) ON DELETE CASCADE,"));
+    sql.append(QString("UNIQUE (user_id, friend_id));"));
     query.exec(sql);
 
     sql = QString("INSERT INTO USERINFO VALUES(1, 'admin', '123456', '2.bmp', %1, '');").arg(OffLine);    //插入数据
@@ -141,6 +158,49 @@ QJsonObject DataBaseMag::userLogin(const QString &name, const QString &passwd)
     jsonObj.insert("code", code);
 
     return jsonObj;
+}
+
+E_STATUS DataBaseMag::userAddFriend(const QString &userId, const QString &friendName)
+{
+    qDebug() << "添加好友" << userId << friendName;
+    //用户名为空或用户不存在
+    if(friendName.isEmpty() || !haveUser(friendName))
+    {
+        qDebug() << "用户名不存在";
+        return AddFriendFailed_NoneUser;
+    }
+
+    QSqlQuery query;
+    const QString sql = "INSERT OR IGNORE INTO FRIEND "
+                        "(user_id, friend_id, remark, status, add_time, update_time) "
+                        "VALUES (:user_id, (SELECT id FROM USERINFO WHERE name = :friendName), '',"
+                        " 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+    query.prepare(sql);
+    query.bindValue(":user_id", userId);
+    query.bindValue(":friendName", friendName);
+
+    if(!query.exec()){
+        qDebug() << "添加好友Sql执行失败";
+        return AddFriendFailed;
+    }
+    return AddFriendOk;
+
+}
+
+bool DataBaseMag::haveUser(const QString &name)
+{
+    if(name.isEmpty()){
+        return false;
+    }
+    QSqlQuery query;
+    const QString sql("SELECT name FROM USERINFO where name = ?");
+    query.prepare(sql);
+    query.addBindValue(name);
+
+    if(!query.exec()){
+        return false;
+    }
+    return query.next();
 }
 
 void DataBaseMag::UpdateUserStatus(int id, E_STATUS status)

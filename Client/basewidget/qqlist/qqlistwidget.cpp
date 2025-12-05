@@ -6,7 +6,7 @@
 QQListWidget::QQListWidget(QWidget *parent) :
     QListWidget(parent)
 {
-    m_nRightClickCell = NULL;
+    m_nRightClickCell = nullptr;
 }
 
 QQCell *QQListWidget::GetRightClickedCell()
@@ -191,7 +191,7 @@ QQCell *QQListWidget::getGroupForName(QString *groupName)
         }
     }
 
-    return NULL;
+    return nullptr;
 }
 
 void QQListWidget::on_popmenuWillShow(QQPopMenuWidget *widget, QMenu *menu)

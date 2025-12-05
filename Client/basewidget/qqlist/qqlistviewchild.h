@@ -19,7 +19,7 @@ class QQListViewChild : public QQPopMenuWidget
     Q_OBJECT
 
 public:
-    explicit QQListViewChild(QQPopMenuWidget *parent = 0);
+    explicit QQListViewChild(QQPopMenuWidget *parent = nullptr);
     ~QQListViewChild();
 
 signals:

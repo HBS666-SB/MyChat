@@ -1,5 +1,4 @@
 #include "mysocket.h"
-
 #include <QJsonObject>
 #include <qjsondocument.h>
 #include "comapi/unit.h"
@@ -86,6 +85,22 @@ void MySocket::sltReadyRead()
             emit signalStatus(RegisterFailed);
             break;
         }
+        case AddFriendOk:
+        {
+            emit signalStatus(AddFriendOk);
+            break;
+        }
+        case AddFriendFailed:
+        {
+            emit signalStatus(AddFriendFailed);
+            break;
+        }
+        case AddFriendFailed_NoneUser:
+        {
+            emit signalStatus(AddFriendFailed_NoneUser);
+            break;
+        }
+
         }
     }
 }
@@ -140,5 +155,5 @@ void MySocket::ParseLogin(const QJsonValue &dataVal)
 
 QJsonValue MySocket::GetUserId()
 {
-
+    return MyApp::m_nId;
 }

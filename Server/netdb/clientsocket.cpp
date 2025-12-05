@@ -25,7 +25,7 @@ ClientSocket::~ClientSocket()
 
 }
 
-int ClientSocket::GetUserId() const
+int ClientSocket::GetUserId()
 {
     return  m_nId;
 }
@@ -69,7 +69,7 @@ void ClientSocket::SltDisconnected()
 void ClientSocket::SltReadyRead()
 {
     QByteArray reply = m_tcpSocket->readAll();
-//    qDebug() << reply;
+    qDebug() << "收到：" << reply;
     QJsonParseError jsonError;
     QJsonDocument document = QJsonDocument::fromJson(reply,&jsonError);
 
@@ -79,8 +79,7 @@ void ClientSocket::SltReadyRead()
         QJsonObject jsonObj = document.object();
         nType = jsonObj.value("type").toInt();
         dataVal = jsonObj.value("data");
-
-//        qDebug() << "消息类型：" << nType;
+        m_nId = jsonObj.value("from").toInt();
 
     }
 
@@ -91,8 +90,15 @@ void ClientSocket::SltReadyRead()
         break;
     }
     case Register:
+    {
         ParseReister(dataVal);
         break;
+    }
+    case AddFriend:
+    {
+        ParseAddFriend(dataVal);
+        break;
+    }
     }
 }
 
@@ -142,6 +148,14 @@ void ClientSocket::ParseReister(const QJsonValue &dataVal)
 
 void ClientSocket::ParseAddFriend(const QJsonValue &dataVal)
 {
+    if(!dataVal.isObject()){
+        qDebug() << "添加好友传入参数有误";
+        return;
+    }
+    QJsonObject jsonObj = dataVal.toObject();
+    QString friendName = jsonObj.value("name").toString();
+
+    SltSendMessage(DataBaseMag::getInstance()->userAddFriend(QString::number(GetUserId()),friendName),jsonObj);   //传输的obj先不管
 
 }
 
