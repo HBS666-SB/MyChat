@@ -35,54 +35,8 @@ void ClientSocket::Close()
 
 }
 
-void ClientSocket::SltSendMessage(const quint8 &type, const QJsonValue &jsonVal)
+void ClientSocket::sendMsgType(const quint8 &nType, const QJsonValue &dataVal)
 {
-    if (!m_tcpSocket->isOpen()) return;
-
-    // 构建 Json 对象
-    QJsonObject jsonObj;
-    jsonObj.insert("type", type);
-    jsonObj.insert("from", m_nId);
-    jsonObj.insert("data", jsonVal);
-
-    // 构建 Json 文档
-    QJsonDocument document;
-    document.setObject(jsonObj);
-
-    qDebug() << "服务器发送消息：" << document.toJson(QJsonDocument::Compact);
-
-    m_tcpSocket->write(document.toJson(QJsonDocument::Compact));
-}
-
-void ClientSocket::SltConnected()
-{
-    qDebug() << "服务器端socket检测到新的连接";
-}
-
-void ClientSocket::SltDisconnected()
-{
-    qDebug() << "服务器端socket检测到有用户下线";
-    DataBaseMag::getInstance()->UpdateUserStatus(m_nId, OffLine);
-    Q_EMIT signalDisConnected();
-}
-
-void ClientSocket::SltReadyRead()
-{
-    QByteArray reply = m_tcpSocket->readAll();
-    qDebug() << "服务器收到消息" << reply;
-    QJsonParseError jsonError;
-    QJsonDocument document = QJsonDocument::fromJson(reply,&jsonError);
-
-    int  nType;
-    QJsonValue dataVal;
-    if(!document.isNull() && jsonError.error == QJsonParseError::NoError){
-        QJsonObject jsonObj = document.object();
-        nType = jsonObj.value("type").toInt();
-        dataVal = jsonObj.value("data");
-        m_nId = jsonObj.value("from").toInt();
-
-    }
-
     switch (nType) {
     case Login:
     {
@@ -103,20 +57,107 @@ void ClientSocket::SltReadyRead()
     }
 }
 
+void ClientSocket::SltSendMessage(const quint8 &type, const QJsonValue &jsonVal)
+{
+    if (!m_tcpSocket->isOpen()) return;
+
+    // 构建 Json 对象
+    QJsonObject jsonObj;
+    jsonObj.insert("type", type);
+    jsonObj.insert("from", m_nId);
+    jsonObj.insert("data", jsonVal);
+
+    // 构建 Json 文档
+    QJsonDocument document;
+    document.setObject(jsonObj);
+    QByteArray jsonData = document.toJson(QJsonDocument::Compact);
+    qDebug() << "服务器发送消息：" << jsonData;
+
+    //防止粘包
+    quint32 dataLen = static_cast<quint32>(jsonData.size());
+    QByteArray lenBytes;
+    lenBytes.resize(4);
+    lenBytes[0] = (dataLen >> 24) & 0xFF;
+    lenBytes[1] = (dataLen >> 16) & 0xFF;
+    lenBytes[2] = (dataLen >> 8) & 0xFF;
+    lenBytes[3] = dataLen & 0xFF;
+    QByteArray sendData = lenBytes + jsonData;
+
+    m_tcpSocket->write(sendData);
+}
+
+void ClientSocket::SltConnected()
+{
+    qDebug() << "服务器端socket检测到新的连接";
+}
+
+void ClientSocket::SltDisconnected()
+{
+    qDebug() << "服务器端socket检测到有用户下线";
+    DataBaseMag::getInstance()->UpdateUserStatus(m_nId, OffLine);
+    Q_EMIT signalDisConnected(this);
+}
+
+void ClientSocket::SltReadyRead()
+{
+    QByteArray newData = m_tcpSocket->readAll();
+    m_recvBuffer.append(newData);
+    qDebug() << "服务器收到消息：" << newData;
+    while (true) {
+        // 先检查是否够4字节长度头
+        if (m_recvBuffer.size() < 4) {
+            break; // 数据不足，等待下次
+        }
+
+        quint32 dataLen = 0;
+        dataLen |= (static_cast<quint8>(m_recvBuffer[0]) << 24);
+        dataLen |= (static_cast<quint8>(m_recvBuffer[1]) << 16);
+        dataLen |= (static_cast<quint8>(m_recvBuffer[2]) << 8);
+        dataLen |= static_cast<quint8>(m_recvBuffer[3]);
+
+        if (m_recvBuffer.size() < 4 + dataLen) {
+            break; // 数据未收全，等待下次
+        }
+        QByteArray jsonData = m_recvBuffer.mid(4, dataLen);
+        m_recvBuffer.remove(0, 4 + dataLen);
+
+        QJsonDocument doc = QJsonDocument::fromJson(jsonData);
+        if (doc.isObject()) {
+            QJsonObject jsonObj = doc.object();
+            quint8 nType = jsonObj["type"].toInt();
+            QString from = jsonObj["from"].toString();
+            QJsonValue dataVal = jsonObj["data"];
+
+            sendMsgType(nType,dataVal);
+        }
+    }
+
+
+}
+
 void ClientSocket::ParseLogin(const QJsonValue &dataVal)
 {
     if(dataVal.isObject()){
         QJsonObject dataObj = dataVal.toObject();
         QString strName = dataObj.value("name").toString();
         QString strPwd = dataObj.value("passwd").toString();
-//        qDebug() << "登录" << strName << strPwd;
+        //        qDebug() << "登录" << strName << strPwd;
         QJsonObject jsonObj = DataBaseMag::getInstance()->userLogin(strName, strPwd);
 
         m_nId = jsonObj.value("id").toInt();
 
         if (m_nId > 0) emit signalConnected();
-        // 发送查询结果至客户端
-        SltSendMessage(Login, jsonObj);
+
+        QString msg = jsonObj.value("msg").toString();
+        if(msg == "ok"){  //不在线
+            SltSendMessage(LoginSuccess, jsonObj);
+            emit signalLoginSuccess(this,QString::number(m_nId));
+            return;
+        }else if(msg == "OnLine"){
+            SltSendMessage(LoginRepeat, jsonObj);
+        }else{
+            SltSendMessage(LoginPasswdError, jsonObj);
+        }
 
     }
 }
@@ -155,9 +196,18 @@ void ClientSocket::ParseAddFriend(const QJsonValue &dataVal)
     }
     QJsonObject jsonObj = dataVal.toObject();
     QString friendName = jsonObj.value("name").toString();
+    int senderId = jsonObj.value("id").toInt();
+    //传输的obj先不管
+    SltSendMessage(DataBaseMag::getInstance()->userAddFriend(QString::number(GetUserId()),friendName),jsonObj);
+    QString friendId = QString::number(DataBaseMag::getInstance()->getAddFriendId(friendName));
+    QString senderName = DataBaseMag::getInstance()->getUsernameFromId(QString::number(senderId));
+//    qDebug() << jsonObj << "senderName" << senderName << "senderId" << senderId;
+    QJsonObject resObj;
 
-    SltSendMessage(DataBaseMag::getInstance()->userAddFriend(QString::number(GetUserId()),friendName),jsonObj);   //传输的obj先不管
+    resObj.insert("name",senderName);
+    QJsonValue resVal = resObj;
 
+    emit signalPrivateMsgToClient(AddFriendRequist, friendId,resVal);
 }
 
 void ClientSocket::ParseAddGroup(const QJsonValue &dataVal)

@@ -19,6 +19,7 @@ public:
     ~MainWindow();
 
     void addFriend(const QJsonValue &dataVal);
+    void addFriendRequist(const QJsonValue &dataVal);
 
 private slots:
     void sltButtonClicked(int index);

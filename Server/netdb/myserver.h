@@ -30,7 +30,8 @@ protected slots:
     // 继承虚函数
     virtual void SltNewConnection() = 0;
     virtual void SltConnected() = 0;
-    virtual void SltDisConnected() = 0;
+    virtual void SltDisConnected(ClientSocket *client) = 0;
+    virtual void SltLoginSuccess(ClientSocket *client, const QString &userId) = 0;
 };
 
 // 消息服务器
@@ -46,15 +47,19 @@ signals:
 
 private:
     // 客户端管理
-    QVector < ClientSocket * > m_clients;
+    QVector < ClientSocket * > m_clients;   //广播快
+    QHash<QString, ClientSocket*> m_clientHash;  //单播快
 public slots:
     void SltTransFileToClient(const int &userId, const QJsonValue &json);
 
 private slots:
     void SltNewConnection();
     void SltConnected();
-    void SltDisConnected();
-    void SltMsgToClient(const quint8 &type, const int &id, const QJsonValue &json);
+    void SltDisConnected(ClientSocket *client);
+//    void SltPublicMsgToClient(const quint8 &type, const int &id, const QJsonValue &json); //广播
+    void SltPrivateMsgToClient(const quint8 &type, const QString &targetId, const QJsonValue &json);    //单播
+
+    void SltLoginSuccess(ClientSocket *client, const QString &userId);
 };
 
 /*

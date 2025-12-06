@@ -150,10 +150,15 @@ QJsonObject DataBaseMag::userLogin(const QString &name, const QString &passwd)
         }
         strHead = query.value("head").toString();
     }
-
     // 组织返回
     jsonObj.insert("id", nId);
-    jsonObj.insert("msg", nId < 0 ? "error" : "ok");
+    if(nId == -1){  //用户名或密码错误
+        jsonObj.insert("msg", "noneUser");
+    }else if(nId == -2){ //已在线
+        jsonObj.insert("msg", "OnLine");
+    }else {
+        jsonObj.insert("msg", "ok");
+    }
     jsonObj.insert("head", strHead);
     jsonObj.insert("code", code);
 
@@ -162,11 +167,11 @@ QJsonObject DataBaseMag::userLogin(const QString &name, const QString &passwd)
 
 E_STATUS DataBaseMag::userAddFriend(const QString &userId, const QString &friendName)
 {
-//    qDebug() << "添加好友" << userId << friendName;
+    //    qDebug() << "添加好友" << userId << friendName;
     //用户名为空或用户不存在
     if(friendName.isEmpty() || !haveUser(friendName))
     {
-//        qDebug() << "用户名不存在";
+        //        qDebug() << "用户名不存在";
         return AddFriendFailed_NoneUser;
     }
 
@@ -244,6 +249,41 @@ QList<QVariantMap> DataBaseMag::getAllUser()
     }
 
     return userList;
+}
+
+int DataBaseMag::getAddFriendId(const QString &friendName)
+{
+    QSqlQuery query;
+    QString sql("select id from userinfo where name = :name");
+    query.prepare(sql);
+    query.bindValue(":name", friendName);
+    if(!query.exec()){
+        qDebug() << "添加好友：没有该用户";
+        return -1;
+    }
+    if(!query.next()) return -1;
+    return query.value("id").toInt();
+}
+
+QString DataBaseMag::getUsernameFromId(const QString &userId)
+{
+    if(userId.isEmpty()) {
+        qDebug() << "userId不能为空";
+        return "";
+    }
+    QSqlQuery query;
+    QString sql("select name from userinfo where id = :userId");
+    query.prepare(sql);
+    query.bindValue(":userId", userId);
+    if(!query.exec()){
+        qDebug() << "通过id获取用户名失败";
+        return "";
+    }
+    if(!query.next()){
+        qDebug() << "userId:" << userId << "无匹配数据：userId=" << userId;
+        return "";
+    }
+    return query.value("name").toString();
 }
 
 

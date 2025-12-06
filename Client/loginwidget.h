@@ -18,7 +18,7 @@ public:
     ~LoginWidget();
 
     void sendLogin();
-    void loginSuccess();
+    void loginSuccess(const QJsonValue &dataVal);
 
 private slots:
     void on_btnLogin_clicked();

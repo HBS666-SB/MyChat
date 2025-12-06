@@ -34,12 +34,22 @@ LoginWidget::~LoginWidget()
     delete ui;
 }
 
-void LoginWidget::loginSuccess()
+void LoginWidget::loginSuccess(const QJsonValue &dataVal)
 {
+    if(!dataVal.isObject())
+    {
+        qDebug() << "登录功能出错";
+        return;
+    }
+    QJsonObject jsonObj = dataVal.toObject();
+    MyApp::m_nId = jsonObj.value("id").toInt();
+    MyApp::m_strHeadFile = jsonObj.value("head").toString();
+
     disconnect(m_tcpSocket,&MySocket::signalStatus,this,&LoginWidget::sltStatus);
     MyApp::m_strUserName = ui->lineEditUser->text();
     MyApp::m_strPassword = ui->lineEditPasswd->text();
     //打开该用户的数据库
+
     DatabaseMsg::getInstance()->OpenUserDatabase(QString("%1user%2.db").arg(MyApp::m_strDatabasePath).arg(MyApp::m_nId));
     DatabaseMsg::getInstance()->OpenMessageDatabase(QString("%1msg%2.db").arg(MyApp::m_strDatabasePath).arg(MyApp::m_nId));
 
@@ -53,12 +63,17 @@ void LoginWidget::sltStatus(const quint8 &status, const QJsonValue &dataVal)
     switch (status) {
     case LoginSuccess:
     {
-        loginSuccess();
+        loginSuccess(dataVal);
         break;
     }
     case LoginRepeat:
     {
         QMessageBox::warning(this,"登录","该账号已在线");
+        break;
+    }
+    case LoginPasswdError:
+    {
+        QMessageBox::warning(this,"登录","用户名或密码错误");
         break;
     }
     case RegisterOk:

@@ -58,50 +58,35 @@ void MySocket::connectToHost(const QHostAddress &host, quint16 port)
 
 void MySocket::sltReadyRead()
 {
-    QByteArray reply = m_tcpSocket->readAll();
-    qDebug() << "客户端收到消息：" << reply;
-    QJsonParseError jsonError;
-    QJsonDocument document = QJsonDocument::fromJson(reply,&jsonError);
-
-    if(!document.isNull() && jsonError.error == QJsonParseError::NoError){
-        QJsonObject jsonObj = document.object();
-        int nType = jsonObj.value("type").toInt();
-        MyApp::m_nId = jsonObj.value("from").toInt();
-        QJsonValue dataVal = jsonObj.value("data");
-
-        switch (nType) {
-        case Login:
-        {
-            ParseLogin(dataVal);
-            break;
-        }
-        case RegisterOk:
-        {
-            emit signalStatus(RegisterOk,dataVal);
-            break;
-        }
-        case RegisterFailed:
-        {
-            emit signalStatus(RegisterFailed,dataVal);
-            break;
-        }
-        case AddFriendOk:
-        {
-
-            emit signalStatus(AddFriendOk,dataVal);
-            break;
-        }
-        case AddFriendFailed:
-        {
-            emit signalStatus(AddFriendFailed,dataVal);
-            break;
-        }
-        case AddFriendFailed_NoneUser:
-        {
-            emit signalStatus(AddFriendFailed_NoneUser,dataVal);
-            break;
+    QByteArray newData = m_tcpSocket->readAll();
+    m_recvBuffer.append(newData);
+    qDebug() << "客户端收到消息：" << newData;
+    while (true) {
+        // 先检查是否够4字节长度头
+        if (m_recvBuffer.size() < 4) {
+            break; // 数据不足，等待下次
         }
 
+        quint32 dataLen = 0;
+        dataLen |= (static_cast<quint8>(m_recvBuffer[0]) << 24);
+        dataLen |= (static_cast<quint8>(m_recvBuffer[1]) << 16);
+        dataLen |= (static_cast<quint8>(m_recvBuffer[2]) << 8);
+        dataLen |= static_cast<quint8>(m_recvBuffer[3]);
+
+        if (m_recvBuffer.size() < 4 + dataLen) {
+            break; // 数据未收全，等待下次
+        }
+        QByteArray jsonData = m_recvBuffer.mid(4, dataLen);
+        m_recvBuffer.remove(0, 4 + dataLen);
+
+        QJsonDocument doc = QJsonDocument::fromJson(jsonData);
+        if (doc.isObject()) {
+            QJsonObject jsonObj = doc.object();
+            quint8 nType = jsonObj["type"].toInt();
+            QString from = jsonObj["from"].toString();
+            QJsonValue dataVal = jsonObj["data"];
+
+            sendMsgType(nType,dataVal);
         }
     }
 }
@@ -132,27 +117,74 @@ void MySocket::sendMessage(const qint8 &type, const QJsonValue &dataVal)
 
     QJsonDocument document;
     document.setObject(json);
-    QByteArray byteArray = document.toJson(QJsonDocument::Compact);
-    qDebug() << "客户端发送消息：" << byteArray;
-    m_tcpSocket->write(byteArray);
+    QByteArray jsonData = document.toJson(QJsonDocument::Compact);
+    qDebug() << "客户端发送消息：" << jsonData;
+
+    //防止粘包
+    quint32 dataLen = static_cast<quint32>(jsonData.size());
+    QByteArray lenBytes;
+    lenBytes.resize(4);
+    lenBytes[0] = (dataLen >> 24) & 0xFF;
+    lenBytes[1] = (dataLen >> 16) & 0xFF;
+    lenBytes[2] = (dataLen >> 8) & 0xFF;
+    lenBytes[3] = dataLen & 0xFF;
+    QByteArray sendData = lenBytes + jsonData;
+
+    m_tcpSocket->write(sendData);
 }
 
-void MySocket::ParseLogin(const QJsonValue &dataVal)
+void MySocket::sendMsgType(const quint8 &nType, const QJsonValue &dataVal)
 {
-    if(!dataVal.isObject()){
-        qDebug() << "登录功能出错";
-    }
-    QJsonObject jsonObj = dataVal.toObject();
-    qDebug() << dataVal;
-    MyApp::m_strHeadFile = jsonObj.value("head").toString();
-    m_nId = jsonObj.value("id").toInt();
-    QString msg = jsonObj.value("msg").toString();
-    if(msg == "ok"){
+    switch (nType) {
+    case LoginSuccess:
+    {
         emit signalStatus(LoginSuccess,dataVal);
-    }else if(m_nId == -2){
+        break;
+    }
+    case LoginRepeat:
+    {
         emit signalStatus(LoginRepeat,dataVal);
+        break;
+    }
+    case LoginPasswdError:
+    {
+        emit signalStatus(LoginPasswdError,dataVal);
+        break;
+    }
+    case RegisterOk:
+    {
+        emit signalStatus(RegisterOk,dataVal);
+        break;
+    }
+    case RegisterFailed:
+    {
+        emit signalStatus(RegisterFailed,dataVal);
+        break;
+    }
+    case AddFriendOk:
+    {
+        emit signalStatus(AddFriendOk,dataVal);
+        break;
+    }
+    case AddFriendFailed:
+    {
+        emit signalStatus(AddFriendFailed,dataVal);
+        break;
+    }
+    case AddFriendFailed_NoneUser:
+    {
+        emit signalStatus(AddFriendFailed_NoneUser,dataVal);
+        break;
+    }
+    case AddFriendRequist:
+    {
+        emit signalStatus(AddFriendRequist, dataVal);
+        break;
+    }
+
     }
 }
+
 
 QJsonValue MySocket::GetUserId()
 {

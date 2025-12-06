@@ -39,6 +39,8 @@ public:
 
     void UpdateUserStatus(int id, E_STATUS status);
     QList<QVariantMap> getAllUser();
+    int getAddFriendId(const QString &friendName); //通过好友用户名获取id
+    QString getUsernameFromId(const QString &userId);   //通过好友Id获取用户名
 
 signals:
 

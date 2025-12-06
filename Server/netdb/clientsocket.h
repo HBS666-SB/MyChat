@@ -17,16 +17,19 @@ public:
 
     int GetUserId();
     void Close();
+    void sendMsgType(const quint8 &nType, const QJsonValue &dataVal);
 signals:
     void signalConnected();
-    void signalDisConnected();
+    void signalDisConnected(ClientSocket *client);
     void signalDownloadFile(const QJsonValue &json);
-    void signalMsgToClient(const quint8 &type, const int &id, const QJsonValue &dataVal);
+    void signalLoginSuccess(ClientSocket *client, const QString &userId);
+    void signalPrivateMsgToClient(const quint8 &type, const QString &targetId, const QJsonValue &json);
 public slots:
 
 private:
     QTcpSocket *m_tcpSocket;
     int m_nId;  //储存用户的id（唯一字段）识别每个套接字对应的用户
+    QByteArray m_recvBuffer;
 
 public slots:
     // 消息回发

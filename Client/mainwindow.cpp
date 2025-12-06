@@ -293,6 +293,11 @@ void MainWindow::sltStatus(const quint8 &status, const QJsonValue &dataVal)
         QMessageBox::warning(this,"添加好友","用户名不存在");
         break;
     }
+    case AddFriendRequist:
+    {
+        addFriendRequist(dataVal);
+        break;
+    }
     }
 }
 void MainWindow::addFriend(const QJsonValue &dataVal)
@@ -307,3 +312,26 @@ void MainWindow::addFriend(const QJsonValue &dataVal)
     DatabaseMsg::getInstance()->AddFriend(userId,friendName);
 
 }
+
+void MainWindow::addFriendRequist(const QJsonValue &dataVal)
+{
+    if(!dataVal.isObject()){
+        qDebug() << "添加好友转发有误";
+        return;
+    }
+    QJsonObject jsonObj = dataVal.toObject();
+    //要对方的名字
+    QString name = jsonObj.value("name").toString();
+    QMessageBox::StandardButton result = QMessageBox::question(
+                this,"添加好友",
+                QString("'%1'添加你为好友").arg(name),
+                QMessageBox::Ok | QMessageBox::Cancel,
+                QMessageBox::Ok);
+    if(result == QMessageBox::Ok){
+        qDebug() << "已同意好友申请";
+    }else {
+        qDebug() << "已拒绝好友申请";
+    }
+}
+
+

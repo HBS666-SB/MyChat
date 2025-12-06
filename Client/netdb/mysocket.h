@@ -17,6 +17,7 @@ public:
     void sendMessage(const qint8 &type, const QJsonValue &dataVal);
 
     void ParseLogin(const QJsonValue &dataVal);
+    void sendMsgType(const quint8 &nType,const QJsonValue &dataVal);
 
     QJsonValue GetUserId();
 
@@ -32,6 +33,7 @@ private slots:
 
 private:
     QTcpSocket *m_tcpSocket;
+    QByteArray m_recvBuffer;    //缓存未处理的字节
     int m_nId;
 };
 
