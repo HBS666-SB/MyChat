@@ -77,27 +77,28 @@ void MySocket::sltReadyRead()
         }
         case RegisterOk:
         {
-            emit signalStatus(RegisterOk);
+            emit signalStatus(RegisterOk,dataVal);
             break;
         }
         case RegisterFailed:
         {
-            emit signalStatus(RegisterFailed);
+            emit signalStatus(RegisterFailed,dataVal);
             break;
         }
         case AddFriendOk:
         {
-            emit signalStatus(AddFriendOk);
+
+            emit signalStatus(AddFriendOk,dataVal);
             break;
         }
         case AddFriendFailed:
         {
-            emit signalStatus(AddFriendFailed);
+            emit signalStatus(AddFriendFailed,dataVal);
             break;
         }
         case AddFriendFailed_NoneUser:
         {
-            emit signalStatus(AddFriendFailed_NoneUser);
+            emit signalStatus(AddFriendFailed_NoneUser,dataVal);
             break;
         }
 
@@ -132,7 +133,7 @@ void MySocket::sendMessage(const qint8 &type, const QJsonValue &dataVal)
     QJsonDocument document;
     document.setObject(json);
     QByteArray byteArray = document.toJson(QJsonDocument::Compact);
-    qDebug() << "消息发送" << byteArray;
+    qDebug() << "客户端发送消息：" << byteArray;
     m_tcpSocket->write(byteArray);
 }
 
@@ -147,9 +148,9 @@ void MySocket::ParseLogin(const QJsonValue &dataVal)
     m_nId = jsonObj.value("id").toInt();
     QString msg = jsonObj.value("msg").toString();
     if(msg == "ok"){
-        emit signalStatus(LoginSuccess);
+        emit signalStatus(LoginSuccess,dataVal);
     }else if(m_nId == -2){
-        emit signalStatus(LoginRepeat);
+        emit signalStatus(LoginRepeat,dataVal);
     }
 }
 

@@ -5,6 +5,7 @@
 #include <QObject>
 #include <QSqlDatabase>
 #include <QVector>
+#include "comapi/unit.h"
 
 class DatabaseMsg : public QObject
 {
@@ -31,14 +32,14 @@ public:
     bool OpenUserDatabase(const QString &dataName);
     bool OpenMessageDatabase(const QString &dataName);
     // 好友操作
-    void AddFriend(const int &id, const int &userId, const QString &name);
+    void AddFriend(const int &userId, const QString &friendName);
     QJsonArray GetMyFriend(const int &userId) const;
 
     // 消息操作
     void AddHistoryMsg(const int &userId, const QString &name,
                        const QString &text, const QString &time);
     QVector<QJsonObject> QueryHistory(const int &id, const int &count = 0);
-    bool isMyFriend(int,QString);
+    E_STATUS isMyFriend(int,QString);
 
 private:
     static DatabaseMsg *self;

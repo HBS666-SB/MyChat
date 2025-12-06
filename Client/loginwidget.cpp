@@ -48,7 +48,7 @@ void LoginWidget::loginSuccess()
     mainwdo->show();
 }
 
-void LoginWidget::sltStatus(const quint8 &status)
+void LoginWidget::sltStatus(const quint8 &status, const QJsonValue &dataVal)
 {
     switch (status) {
     case LoginSuccess:

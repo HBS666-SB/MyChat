@@ -49,7 +49,7 @@ void ClientSocket::SltSendMessage(const quint8 &type, const QJsonValue &jsonVal)
     QJsonDocument document;
     document.setObject(jsonObj);
 
-    qDebug() << "服务器端m_tcpSocket->write:" << document.toJson(QJsonDocument::Compact);
+    qDebug() << "服务器发送消息：" << document.toJson(QJsonDocument::Compact);
 
     m_tcpSocket->write(document.toJson(QJsonDocument::Compact));
 }
@@ -69,7 +69,7 @@ void ClientSocket::SltDisconnected()
 void ClientSocket::SltReadyRead()
 {
     QByteArray reply = m_tcpSocket->readAll();
-    qDebug() << "收到：" << reply;
+    qDebug() << "服务器收到消息" << reply;
     QJsonParseError jsonError;
     QJsonDocument document = QJsonDocument::fromJson(reply,&jsonError);
 
@@ -99,6 +99,7 @@ void ClientSocket::SltReadyRead()
         ParseAddFriend(dataVal);
         break;
     }
+
     }
 }
 

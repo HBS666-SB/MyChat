@@ -21,7 +21,7 @@ public:
     QJsonValue GetUserId();
 
 signals:
-    void signalStatus(const quint8 &status);
+    void signalStatus(const quint8 &status,const QJsonValue &dataVal);
     void signalConnectSuccess();
 
 private slots:

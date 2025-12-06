@@ -22,7 +22,7 @@ public:
 
 private slots:
     void on_btnLogin_clicked();
-    void sltStatus(const quint8 &status);
+    void sltStatus(const quint8 &status,const QJsonValue &dataVal);
 
     void on_btnWinMenu_clicked();
 

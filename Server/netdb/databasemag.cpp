@@ -162,11 +162,11 @@ QJsonObject DataBaseMag::userLogin(const QString &name, const QString &passwd)
 
 E_STATUS DataBaseMag::userAddFriend(const QString &userId, const QString &friendName)
 {
-    qDebug() << "添加好友" << userId << friendName;
+//    qDebug() << "添加好友" << userId << friendName;
     //用户名为空或用户不存在
     if(friendName.isEmpty() || !haveUser(friendName))
     {
-        qDebug() << "用户名不存在";
+//        qDebug() << "用户名不存在";
         return AddFriendFailed_NoneUser;
     }
 

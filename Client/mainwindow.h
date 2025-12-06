@@ -18,6 +18,7 @@ public:
     explicit MainWindow(MySocket *socket, QWidget *parent = nullptr);
     ~MainWindow();
 
+    void addFriend(const QJsonValue &dataVal);
 
 private slots:
     void sltButtonClicked(int index);
@@ -32,7 +33,7 @@ private slots:
     void SltFriendsClicked(QQCell *action);
     void onChildPopMenuDidSelected(QAction* action);
 
-    void sltStatus(const quint8 &status);
+    void sltStatus(const quint8 &status,const QJsonValue &dataVal);
 private:
     // 添加系统菜单处理
     void InitSysMenu();

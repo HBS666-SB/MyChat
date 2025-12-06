@@ -1,5 +1,5 @@
 #include "databasemsg.h"
-
+#include "comapi/unit.h"
 #include <QJsonArray>
 #include <QVector>
 #include <QDebug>
@@ -31,32 +31,102 @@ bool DatabaseMsg::OpenUserDatabase(const QString &dataName)
         return false;
     }
     QSqlQuery query(userdb);
+    QString sql;
 
-    query.exec("CREATE TABLE FRIEND (id INT, userId INT, name varchar(50))");   // 好友表 id为好友id，userid为当前用户id
-    query.exec("CREATE TABLE MYGROUP (id INT, userId INT, name varchar(50))");// 群组表 id为群组id，userid为当前用户id
-    query.exec("CREATE TABLE USERINFO (id INT, name varchar(50), passwd varchar(50))"); // 用户数据保存
+    sql = QString("CREATE TABLE IF NOT EXISTS USERINFO (");
+    sql.append(QString("id INTEGER PRIMARY KEY AUTOINCREMENT,"));
+    sql.append(QString("name VARCHAR(30) NOT NULL UNIQUE,"));
+    sql.append(QString("passwd VARCHAR(30) NOT NULL,"));
+    sql.append(QString("head VARCHAR(100) DEFAULT 'default.png',"));
+    sql.append(QString("status INTEGER DEFAULT %1,").arg(OffLine));
+    sql.append(QString("lasttime DATETIME DEFAULT NULL);"));
+    query.exec(sql);
+
+    sql = QString("CREATE TABLE IF NOT EXISTS GROUPS (");
+    sql.append(QString("group_id INTEGER PRIMARY KEY AUTOINCREMENT,"));
+    sql.append(QString("group_name VARCHAR(50) NOT NULL,"));
+    sql.append(QString("group_head VARCHAR(100) DEFAULT 'default_group.png',"));
+    sql.append(QString("create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,"));
+    sql.append(QString("creator_id INTEGER NOT NULL);"));
+    query.exec(sql);
+
+    sql = QString("CREATE TABLE IF NOT EXISTS GROUP_MEMBER (");
+    sql.append(QString("id INTEGER PRIMARY KEY AUTOINCREMENT,"));
+    sql.append(QString("group_id INTEGER NOT NULL,"));
+    sql.append(QString("user_id INTEGER NOT NULL,"));
+    sql.append(QString("identity INTEGER NOT NULL DEFAULT 0,"));
+    sql.append(QString("join_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,"));
+    sql.append(QString("UNIQUE (group_id, user_id));"));
+    query.exec(sql);
+
+    sql = QString("CREATE TABLE IF NOT EXISTS FRIEND (");
+    sql.append(QString("id INTEGER PRIMARY KEY AUTOINCREMENT,"));
+    sql.append(QString("user_id INTEGER NOT NULL,"));                     // 自己的用户ID
+//    sql.append(QString("friend_id INTEGER NOT NULL,"));                   //好友ID
+    sql.append(QString("friend_name VARCHAR(30) NOT NULL,"));             // 好友用户名
+    sql.append(QString("remark VARCHAR(30) DEFAULT '',"));                // 好友备注
+    sql.append(QString("status INTEGER NOT NULL DEFAULT 0,"));            // 0=待验证/1=已通过/2=已拉黑
+    sql.append(QString("add_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,"));
+    sql.append(QString("update_time DATETIME DEFAULT CURRENT_TIMESTAMP,"));
+    sql.append(QString("UNIQUE (user_id, friend_name));"));                 // 避免重复添加好友
+    query.exec(sql);
     return true;
 }
 
 bool DatabaseMsg::OpenMessageDatabase(const QString &dataName)
 {
-    msgdb = QSqlDatabase::addDatabase("QSQLITE","connectionMsg");
+    //避免重复连接
+    if (QSqlDatabase::contains("connectionMsg")) {
+        msgdb = QSqlDatabase::database("connectionMsg");
+        if (msgdb.isOpen()) {
+            return true;
+        }
+    }
+
+    msgdb = QSqlDatabase::addDatabase("QSQLITE", "connectionMsg");
     msgdb.setDatabaseName(dataName);
-    if(!msgdb.open()){
+
+    if (!msgdb.open()) {
         qDebug() << "打开消息数据库失败";
         return false;
     }
+
     QSqlQuery query(msgdb);
-    query.exec("CREATE TABLE MSGINFO (id INT PRIMARY KEY, userId INT, name varchar(20),"
-               "head varchar(50), datetime varchar(20), filesize varchar(30),"
-               "content varchar(500), type INT, direction INT)");
+    QString sql;
+    sql = QString("CREATE TABLE IF NOT EXISTS MSGINFO (");
+    sql.append(QString("id INTEGER PRIMARY KEY AUTOINCREMENT,"));
+    sql.append(QString("user_id INTEGER NOT NULL,"));
+    sql.append(QString("name VARCHAR(20) NOT NULL,"));
+    sql.append(QString("head VARCHAR(100) DEFAULT 'default.png',"));
+    sql.append(QString("datetime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,"));
+    sql.append(QString("filesize VARCHAR(30) DEFAULT '',"));
+    sql.append(QString("content VARCHAR(1000) NOT NULL,"));
+    sql.append(QString("type INTEGER NOT NULL DEFAULT 0,"));
+    sql.append(QString("direction INTEGER NOT NULL DEFAULT 0);"));
+
+    if (!query.exec(sql)) {
+        qDebug() << "创建消息表MSGINFO失败";
+        msgdb.close();
+        return false;
+    }
 
     return true;
 }
 
-void DatabaseMsg::AddFriend(const int &id, const int &userId, const QString &name)
+void DatabaseMsg::AddFriend(const int &userId, const QString &friendName)
 {
+    QSqlQuery query(userdb);
+    QString sql;
+    sql = QString("INSERT INTO FRIEND (");
+    sql.append("user_id, friend_name, remark, status, add_time, update_time) ");
+    sql.append("VALUES (:userId, :friendName, '', 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)");
 
+    query.prepare(sql);
+    query.bindValue(":userId",userId);
+    query.bindValue(":friendName", friendName);
+    if (!query.exec()) {
+        qDebug() << "数据库插入好友失败";
+    }
 }
 
 QJsonArray DatabaseMsg::GetMyFriend(const int &userId) const
@@ -74,21 +144,31 @@ QVector<QJsonObject> DatabaseMsg::QueryHistory(const int &id, const int &count)
 
 }
 
-bool DatabaseMsg::isMyFriend(int userId, QString friendName)
+E_STATUS DatabaseMsg::isMyFriend(int userId, QString friendName)
 {
     if(userId <= 0 || friendName.isEmpty()){
          qWarning() << "isMyFriend: 无效的输入参数，userId=" << userId << " friendName=" << friendName;
-        return false;
+        return AddFriendFailed;
     }
     QSqlQuery query(userdb);
-    QString sql = "SELECT id FROM FRIEND WHERE userId = :userId AND name = :friendName LIMIT 1";
+    QString sql = "SELECT status FROM FRIEND WHERE user_id = :userId AND friend_name = :friendName LIMIT 1";
 
     query.prepare(sql);
     query.bindValue(":userId", userId);
     query.bindValue(":friendName", friendName);
     if(!query.exec()){
         qDebug() << "查询失败";
-        return false;
+        return AddFriendFailed;
     }
-    return query.next();
+    int status = -1;
+    if (query.next()){
+        status = query.value("status").toInt();
+        if(status == 0){
+            return AddFriendFailed_Readd;   //添加申请还未通过
+        }else if(status == 1 || status == 2){
+            return  AddFriendFailed_IsHad;  //已经是好友了
+        }
+    }
+    return AddFriendOk; //不是好友
+    qDebug() << "status = " << status;
 }
