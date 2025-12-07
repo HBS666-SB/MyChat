@@ -42,9 +42,11 @@ public:
     int getIdFromUsername(const QString &userName); //通过好友用户名获取id
     QString getUsernameFromId(const QString &userId);   //通过好友Id获取用户名
 
-    void insertMessageQueue(const int &senderId, const int &acceptId, quint8 type);
+    QString jsonValueToString(const QJsonValue &jsonVal);
+    void insertMessageQueue(const int &senderId, const int &acceptId, quint8 type, const QJsonValue &dataVal);
     QList<QVariantMap> getUserMessageQueue(const int &userId);
     void addFriend(const int &userId, const int &friendId);
+    bool isOnline(const int &userId);
 
 signals:
 

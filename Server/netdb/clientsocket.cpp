@@ -222,7 +222,7 @@ void ClientSocket::ParseAddFriend(const QJsonValue &dataVal)
 //    qDebug() << jsonObj << "senderName" << senderName << "senderId" << senderId;
     QJsonObject resObj;
 
-    resObj.insert("requestName",senderName);
+    resObj.insert("name",senderName);   //requestName
     resObj.insert("requestId",senderId);
     resObj.insert("acceptId",friendId);
     QJsonValue resVal = resObj;
@@ -252,7 +252,13 @@ void ClientSocket::ParseAddFriendReply(const QJsonValue &dataVal)
     }
 
     int sendId = DataBaseMag::getInstance()->getIdFromUsername(name);
+    if(!DataBaseMag::getInstance()->isOnline(sendId)){
+        DataBaseMag::getInstance()->insertMessageQueue(static_cast<int>(id),static_cast<int>(sendId),AddFriendReply, dataVal);
+        return;
+    }
     emit signalPrivateMsgToClient(AddFriendReply, sendId, resObj);
+
+    qDebug() << "套接字发送AddFriendReply信号clientsocket.cpp" << resObj;
 
 }
 

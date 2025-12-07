@@ -323,7 +323,7 @@ void MainWindow::addFriendRequist(const QJsonValue &dataVal)
     }
     QJsonObject jsonObj = dataVal.toObject();
     //要对方的名字
-    QString name = jsonObj.value("requestName").toString();
+    QString name = jsonObj.value("name").toString();
     QMessageBox::StandardButton result = QMessageBox::question(
                 this,"添加好友",
                 QString("'%1'添加你为好友").arg(name),
@@ -336,6 +336,7 @@ void MainWindow::addFriendRequist(const QJsonValue &dataVal)
         QJsonObject resObj;
         resObj.insert("id",MyApp::m_nId);
         resObj.insert("name",name);
+        qDebug() << "输出测试resObj.value(name):" << resObj.value("name") << "name" << name;
         resObj.insert("msg","accept");
         m_tcpSocket->sendMessage(AddFriendReply,resObj);   //发送回复消息
     }else {

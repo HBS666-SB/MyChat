@@ -55,7 +55,7 @@ void TcpMsgServer::insertMessageQueue(const QJsonValue &jsonVal, const quint8 &t
     QJsonObject jsonObj = jsonVal.toObject();
     int requestId = jsonObj.value("requestId").toInt();
     int acceptId = jsonObj.value("acceptId").toInt();
-    DataBaseMag::getInstance()->insertMessageQueue(requestId,acceptId,type);
+    DataBaseMag::getInstance()->insertMessageQueue(requestId,acceptId,type, jsonObj);
 }
 
 void TcpMsgServer::sendUserMessageQueue(const QString &userId)  //上线的Id
@@ -73,11 +73,15 @@ void TcpMsgServer::sendUserMessageQueue(const QString &userId)  //上线的Id
         quint8 type = static_cast<quint8>(msg["message_type"].toInt());
         QString id = msg["request_userId"].toString();
         QString friendName = DataBaseMag::getInstance()->getUsernameFromId(id);
-        QJsonObject jsonObj;
+        QJsonObject jsonObj = msg["data"].toJsonObject();
         jsonObj.insert("type",type);
         jsonObj.insert("name",friendName);
 
+
+
         SltPrivateMsgToClient(type,userId.toInt(),jsonObj);
+
+        qDebug() << "发送消息队列中的消息myserver.cpp 82" << jsonObj;
     }
 
 
@@ -130,6 +134,7 @@ void TcpMsgServer::SltPrivateMsgToClient(const quint8 &type, const int &accessId
 
     //转发
     targetClient->SltSendMessage(type, jsonVal);
+    qDebug() << "server.cpp转发出去135" << jsonVal;
 }
 
 void TcpMsgServer::SltLoginSuccess(ClientSocket *client, const QString &userId)

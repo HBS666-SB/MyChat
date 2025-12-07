@@ -107,7 +107,9 @@ void DataBaseMag::createDatabase()
     sql.append(QString("request_userId INTEGER NOT NULL,"));
     sql.append(QString("accept_userId INTEGER NOT NULL,"));
     sql.append(QString("status INTEGER NOT NULL DEFAULT 0,"));  //0=待处理/1=已处理
+    sql.append(QString("data TEXT NOT NULL,"));                   //数据部分
     sql.append(QString("message_type INTEGER NOT NULL);"));
+
     query.exec(sql);
 }
 
@@ -289,22 +291,47 @@ QString DataBaseMag::getUsernameFromId(const QString &userId)
     return query.value("name").toString();
 }
 
-void DataBaseMag::insertMessageQueue(const int &senderId, const int &acceptId, quint8 type)
+QString DataBaseMag::jsonValueToString(const QJsonValue &jsonVal)
 {
+    if (jsonVal.isNull() || jsonVal.isUndefined()) {
+            qWarning() << "QJsonValue为空或未定义，转换失败";
+            return "";
+        }
+
+        QJsonDocument jsonDoc;
+        if (jsonVal.isObject()) {
+            jsonDoc = QJsonDocument(jsonVal.toObject());
+        } else if (jsonVal.isArray()) {
+            jsonDoc = QJsonDocument(jsonVal.toArray());
+        } else {
+            jsonDoc = QJsonDocument(QJsonArray{jsonVal});
+        }
+
+        return jsonDoc.toJson(QJsonDocument::Compact);
+}
+
+void DataBaseMag::insertMessageQueue(const int &senderId, const int &acceptId, quint8 type, const QJsonValue &dataVal)
+{
+    qDebug() << dataVal;
     if(senderId < 0 || acceptId < 0){
         qDebug() << "无效的消息不能插入消息队列";
         return;
     }
+    QString data = jsonValueToString(dataVal);
     QSqlQuery query;
-    QString sql("INSERT INTO MESSAGEQUEUE (request_userId, accept_userId, message_type)"
-                " VALUES (:request_userId, :accept_userId, :message_type);");
+    QString sql("INSERT INTO MESSAGEQUEUE (request_userId, accept_userId, data, message_type)"
+                " VALUES (:request_userId, :accept_userId, :data, :message_type);");
     query.prepare(sql);
     query.bindValue(":request_userId",senderId);
     query.bindValue(":accept_userId",acceptId);
+    query.bindValue(":data",data);
     query.bindValue(":message_type",static_cast<int>(type));
 
     if(!query.exec()){
-        qDebug() << "消息队列插入数据失败：" << "senderId = " << senderId << "accessId = " << acceptId << "message_type = " << static_cast<int>(type);
+        qDebug() << "消息队列插入数据失败：" << "senderId = " << senderId
+                 << "accessId = " << acceptId
+                 << "message_type = " << static_cast<int>(type)
+                 << "data:" << data;
         return;
     }
 }
@@ -314,7 +341,7 @@ QList<QVariantMap> DataBaseMag::getUserMessageQueue(const int &userId)
     QList<QVariantMap> msgList;
     QStringList  needUpdateIds;
     QSqlQuery query;
-    QString sql("SELECT id, request_userId, accept_userId, message_type "
+    QString sql("SELECT id, request_userId, accept_userId, data, message_type "
                 "FROM MESSAGEQUEUE WHERE accept_userId = :userId AND status = 0;");
     query.prepare(sql);
     query.bindValue(":userId",userId);
@@ -323,10 +350,23 @@ QList<QVariantMap> DataBaseMag::getUserMessageQueue(const int &userId)
         return msgList;
     }
     while(query.next()){
+        //取出json
+        QString jsonStr = query.value("data").toString();
+        QByteArray jsonByte = jsonStr.toUtf8();
+        QJsonParseError error;
+        QJsonDocument jsonDoc = QJsonDocument::fromJson(jsonByte, &error);
+        if (error.error != QJsonParseError::NoError) {
+            qCritical() << "JSON解析失败：" << error.errorString();
+            return msgList;
+        }
+        QVariant  jsonVar = jsonDoc.toVariant();
+        QJsonValue jsonVal = QJsonValue::fromVariant(jsonVar);
+
         QString id = query.value("id").toString();
         QVariantMap msgMap;
         msgMap["request_userId"] = query.value("request_userId");
         msgMap["accept_userId"] = query.value("accept_userId");
+        msgMap["data"] = jsonVal;
         msgMap["message_type"] = query.value("message_type");
 
         msgList.append(msgMap);
@@ -363,6 +403,25 @@ void DataBaseMag::addFriend(const int &userId, const int &friendId)
         return;
     }
     return;
+}
+
+bool DataBaseMag::isOnline(const int &userId)
+{
+    QSqlQuery query;
+    QString sql;
+    sql = QString("SELECT status FROM USERINFO WHERE id = :userId");
+    query.prepare(sql);
+    query.bindValue(":userId",userId);
+
+    if(!query.exec()){
+        qDebug() << "获取用户在线状态失败";
+        return true;    //失败就假设为在线
+    }
+    if(!query.next()){
+        qDebug() << "用户不存在";    //不存在就假设为在线
+        return true;
+    }
+    return query.value("status").toInt() == OnLine ? true : false;
 }
 
 
