@@ -53,7 +53,11 @@ void ClientSocket::sendMsgType(const quint8 &nType, const QJsonValue &dataVal)
         ParseAddFriend(dataVal);
         break;
     }
-
+    case UserOnLine:    //用户上线
+    {
+        ParseUserOnline(dataVal);
+        break;
+    }
     }
 }
 
@@ -188,6 +192,7 @@ void ClientSocket::ParseReister(const QJsonValue &dataVal)
     }
 }
 
+//dataVal :senderId accessName
 void ClientSocket::ParseAddFriend(const QJsonValue &dataVal)
 {
     if(!dataVal.isObject()){
@@ -198,13 +203,16 @@ void ClientSocket::ParseAddFriend(const QJsonValue &dataVal)
     QString friendName = jsonObj.value("name").toString();
     int senderId = jsonObj.value("id").toInt();
     //传输的obj先不管
-    SltSendMessage(DataBaseMag::getInstance()->userAddFriend(QString::number(GetUserId()),friendName),jsonObj);
-    QString friendId = QString::number(DataBaseMag::getInstance()->getAddFriendId(friendName));
+    SltSendMessage(DataBaseMag::getInstance()->userAddFriend(GetUserId(),friendName),jsonObj);
+    int friendId = DataBaseMag::getInstance()->getIdFromUsername(friendName);
     QString senderName = DataBaseMag::getInstance()->getUsernameFromId(QString::number(senderId));
+
 //    qDebug() << jsonObj << "senderName" << senderName << "senderId" << senderId;
     QJsonObject resObj;
 
-    resObj.insert("name",senderName);
+    resObj.insert("requestName",senderName);
+    resObj.insert("requestId",senderId);
+    resObj.insert("acceptId",friendId);
     QJsonValue resVal = resObj;
 
     emit signalPrivateMsgToClient(AddFriendRequist, friendId,resVal);

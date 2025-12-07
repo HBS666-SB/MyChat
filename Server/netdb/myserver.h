@@ -42,6 +42,9 @@ public:
     explicit TcpMsgServer(QObject *parent = 0);
     ~TcpMsgServer();
 
+    void insertMessageQueue(const QJsonValue &jsonVal, const quint8 &type);
+    void sendUserMessageQueue(const QString &userId);   //用户登录成功后服务器检索消息队列转发属于他的消息
+
 signals:
     void signalDownloadFile(const QJsonValue &json);
 
@@ -50,14 +53,14 @@ private:
     QVector < ClientSocket * > m_clients;   //广播快
     QHash<QString, ClientSocket*> m_clientHash;  //单播快
 public slots:
-    void SltTransFileToClient(const int &userId, const QJsonValue &json);
+    void SltTransFileToClient(const int &userId, const QJsonValue &jsonVal);
 
 private slots:
     void SltNewConnection();
     void SltConnected();
     void SltDisConnected(ClientSocket *client);
 //    void SltPublicMsgToClient(const quint8 &type, const int &id, const QJsonValue &json); //广播
-    void SltPrivateMsgToClient(const quint8 &type, const QString &targetId, const QJsonValue &json);    //单播
+    void SltPrivateMsgToClient(const quint8 &type, const int &accessId, const QJsonValue &json);    //单播
 
     void SltLoginSuccess(ClientSocket *client, const QString &userId);
 };

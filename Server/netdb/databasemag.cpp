@@ -100,6 +100,14 @@ void DataBaseMag::createDatabase()
 
     sql = QString("INSERT INTO USERINFO VALUES(1, 'admin', '123456', '2.bmp', %1, '');").arg(OffLine);    //插入数据
     query.exec(sql);
+
+    //消息队列数据库
+    sql = QString ("CREATE TABLE IF NOT EXISTS MESSAGEQUEUE (");
+    sql.append(QString("id INTEGER PRIMARY KEY AUTOINCREMENT,"));
+    sql.append(QString("request_userId INTEGER NOT NULL,"));
+    sql.append(QString("accept_userId INTEGER NOT NULL,"));
+    sql.append(QString("message_type INTEGER NOT NULL);"));
+    query.exec(sql);
 }
 
 void DataBaseMag::changeAllUserStatus()
@@ -165,7 +173,7 @@ QJsonObject DataBaseMag::userLogin(const QString &name, const QString &passwd)
     return jsonObj;
 }
 
-E_STATUS DataBaseMag::userAddFriend(const QString &userId, const QString &friendName)
+E_STATUS DataBaseMag::userAddFriend(const int &userId, const QString &friendName)
 {
     //    qDebug() << "添加好友" << userId << friendName;
     //用户名为空或用户不存在
@@ -251,12 +259,12 @@ QList<QVariantMap> DataBaseMag::getAllUser()
     return userList;
 }
 
-int DataBaseMag::getAddFriendId(const QString &friendName)
+int DataBaseMag::getIdFromUsername(const QString &userName)
 {
     QSqlQuery query;
     QString sql("select id from userinfo where name = :name");
     query.prepare(sql);
-    query.bindValue(":name", friendName);
+    query.bindValue(":name", userName);
     if(!query.exec()){
         qDebug() << "添加好友：没有该用户";
         return -1;
@@ -264,6 +272,7 @@ int DataBaseMag::getAddFriendId(const QString &friendName)
     if(!query.next()) return -1;
     return query.value("id").toInt();
 }
+
 
 QString DataBaseMag::getUsernameFromId(const QString &userId)
 {
@@ -284,6 +293,31 @@ QString DataBaseMag::getUsernameFromId(const QString &userId)
         return "";
     }
     return query.value("name").toString();
+}
+
+void DataBaseMag::insertMessageQueue(const int &senderId, const int &acceptId, quint8 type)
+{
+    if(senderId < 0 || acceptId < 0){
+        qDebug() << "无效的消息不能插入消息队列";
+        return;
+    }
+    QSqlQuery query;
+    QString sql("INSERT INTO MESSAGEQUEUE (request_userId, accept_userId, message_type)"
+                " VALUES (:request_userId, :accept_userId, :message_type);");
+    query.prepare(sql);
+    query.bindValue(":request_userId",senderId);
+    query.bindValue(":accept_userId",acceptId);
+    query.bindValue(":message_type",static_cast<int>(type));
+
+    if(!query.exec()){
+        qDebug() << "消息队列插入数据失败：" << "senderId = " << senderId << "accessId = " << acceptId << "message_type = " << static_cast<int>(type);
+        return;
+    }
+}
+
+QList<QVariantMap> DataBaseMag::getUserMessageQueue(const int &userId)
+{
+
 }
 
 

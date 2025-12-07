@@ -33,14 +33,17 @@ public:
     // 注册用户
     E_STATUS userRegister(const QString &name, const QString &passwd);
     QJsonObject userLogin(const QString &name,const QString &passwd);
-    E_STATUS userAddFriend(const QString &userId,const QString &friendName);
+    E_STATUS userAddFriend(const int &userId,const QString &friendName);
 
     bool haveUser(const QString &name);   //查询用户是否存在
 
     void UpdateUserStatus(int id, E_STATUS status);
     QList<QVariantMap> getAllUser();
-    int getAddFriendId(const QString &friendName); //通过好友用户名获取id
+    int getIdFromUsername(const QString &userName); //通过好友用户名获取id
     QString getUsernameFromId(const QString &userId);   //通过好友Id获取用户名
+
+    void insertMessageQueue(const int &senderId, const int &acceptId, quint8 type);
+    QList<QVariantMap> getUserMessageQueue(const int &userId);
 
 signals:
 

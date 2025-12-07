@@ -1,6 +1,10 @@
 #include "myserver.h"
 #include <QHostAddress>
 #include <QHostInfo>
+#include <QJsonValue>
+#include <QJsonObject>
+#include "databasemag.h"
+#include "comapi/unit.h"
 
 MyServer::MyServer(QObject *parent)
 {
@@ -39,7 +43,28 @@ TcpMsgServer::~TcpMsgServer()
 
 }
 
-void TcpMsgServer::SltTransFileToClient(const int &userId, const QJsonValue &json)
+void TcpMsgServer::insertMessageQueue(const QJsonValue &jsonVal, const quint8 &type)
+{
+    //    resObj.insert("requestName",senderName);
+    //    resObj.insert("requestId",senderId);
+    //    resObj.insert("acceptId",friendId);
+    if(!jsonVal.isObject()){
+        qDebug() << "server插入消息队列逻辑有误";
+        return ;
+    }
+    QJsonObject jsonObj = jsonVal.toObject();
+    int requestId = jsonObj.value("requestId").toInt();
+    int acceptId = jsonObj.value("acceptId").toInt();
+    DataBaseMag::getInstance()->insertMessageQueue(requestId,acceptId,type);
+}
+
+void TcpMsgServer::sendUserMessageQueue(const QString &userId)
+{
+    QList<QVariantMap> list = DataBaseMag::getInstance()->getUserMessageQueue(userId.toInt());
+
+}
+
+void TcpMsgServer::SltTransFileToClient(const int &userId, const QJsonValue &jsonVal)
 {
 
 }
@@ -71,15 +96,16 @@ void TcpMsgServer::SltDisConnected(ClientSocket *client)
     client->deleteLater();
 }
 
-void TcpMsgServer::SltPrivateMsgToClient(const quint8 &type, const QString &targetId, const QJsonValue &jsonVal)
+void TcpMsgServer::SltPrivateMsgToClient(const quint8 &type, const int &accessId, const QJsonValue &jsonVal)
 {
-    if(targetId.isEmpty()){
+    if(accessId < 0){
         qDebug() << "单播目标Id为空";
         return;
     }
-    ClientSocket *targetClient = m_clientHash.value(targetId, nullptr);
+    ClientSocket *targetClient = m_clientHash.value(QString::number(accessId), nullptr);
     if (!targetClient) {
-        qDebug() << "[单播] 目标用户不存在或已下线：" << targetId;
+        qDebug() << "[单播] 目标用户不存在或已下线：" << accessId;
+        insertMessageQueue(jsonVal,type);
         return;
     }
 
@@ -100,5 +126,6 @@ void TcpMsgServer::SltLoginSuccess(ClientSocket *client, const QString &userId)
         return;
     }
     m_clientHash.insert(userId, client);
+    sendUserMessageQueue(userId);
     qDebug() << "客户端登录成功，ID：" << userId << "，当前在线数：" << m_clientHash.size();
 }
