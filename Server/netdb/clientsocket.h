@@ -49,6 +49,7 @@ private:
 
     void ParseReister(const QJsonValue &dataVal);
     void ParseAddFriend(const QJsonValue &dataVal);
+    void ParseAddFriendReply(const QJsonValue &dataVal);
     void ParseAddGroup(const QJsonValue &dataVal);
     void ParseCreateGroup(const QJsonValue &dataVal);
 

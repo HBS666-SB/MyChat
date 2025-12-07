@@ -20,6 +20,7 @@ public:
 
     void addFriend(const QJsonValue &dataVal);
     void addFriendRequist(const QJsonValue &dataVal);
+    void addFriendReply(const QJsonValue &dataVal);
 
 private slots:
     void sltButtonClicked(int index);

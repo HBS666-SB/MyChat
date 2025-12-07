@@ -126,6 +126,9 @@ typedef enum {
     AddFriendRequist,               // 添加好友确认通知
     AddGroupRequist,                // 添加群组确认通知
 
+    AddFriendReply,                 //添加好友回复
+    AddGroupReply,
+
     CreateGroup         = 0x25,     // 创建群组
 
     GetMyFriends        = 0x30,     // 上线获取我的好友的状态
@@ -166,8 +169,9 @@ typedef enum {
     RegisterFailed,
 
     AddFriendOk,
-    AddFriendFailed,
     AddFriendFailed_NoneUser,   //用户不存在
+    AddFriendFailed_IsHad,  //已经有好友了状态为1
+    AddFriendFailed_Readd,  //重复添加状态为0(申请还未同意/拒绝)
 } E_STATUS;
 
 #endif // UNIT

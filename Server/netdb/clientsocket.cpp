@@ -58,6 +58,11 @@ void ClientSocket::sendMsgType(const quint8 &nType, const QJsonValue &dataVal)
         ParseUserOnline(dataVal);
         break;
     }
+    case AddFriendReply:
+    {
+        ParseAddFriendReply(dataVal);
+        break;
+    }
     }
 }
 
@@ -203,8 +208,15 @@ void ClientSocket::ParseAddFriend(const QJsonValue &dataVal)
     QString friendName = jsonObj.value("name").toString();
     int senderId = jsonObj.value("id").toInt();
     //传输的obj先不管
-    SltSendMessage(DataBaseMag::getInstance()->userAddFriend(GetUserId(),friendName),jsonObj);
     int friendId = DataBaseMag::getInstance()->getIdFromUsername(friendName);
+    if(!DataBaseMag::getInstance()->haveUser(friendName)){
+        SltSendMessage(AddFriendFailed_NoneUser,jsonObj);
+        return;
+    }
+    if(DataBaseMag::getInstance()->isFriend(GetUserId(),QString::number(friendId))){
+        SltSendMessage(AddFriendOk,jsonObj);
+        return;
+    }
     QString senderName = DataBaseMag::getInstance()->getUsernameFromId(QString::number(senderId));
 
 //    qDebug() << jsonObj << "senderName" << senderName << "senderId" << senderId;
@@ -216,6 +228,32 @@ void ClientSocket::ParseAddFriend(const QJsonValue &dataVal)
     QJsonValue resVal = resObj;
 
     emit signalPrivateMsgToClient(AddFriendRequist, friendId,resVal);
+}
+
+void ClientSocket::ParseAddFriendReply(const QJsonValue &dataVal)
+{
+//    resObj.insert("id",MyApp::m_nId);
+//    resObj.insert("name",name);       //这个名字是要转发给的对象的名字
+//    resObj.insert("msg","refuse");
+    if(!dataVal.isObject()){
+        qDebug() << "添加好友回复转发失败";
+        return;
+    }
+    QJsonObject jsonObj = dataVal.toObject();
+    int id = jsonObj.value("id").toInt();
+    QString name = jsonObj.value("name").toString();
+    QString msg = jsonObj.value("msg").toString();
+    QJsonObject resObj;
+    resObj.insert("name",DataBaseMag::getInstance()->getUsernameFromId(QString::number(id)));
+    resObj.insert("msg",msg);
+    if(msg.compare("accept") == 0){
+        DataBaseMag::getInstance()->addFriend(id, DataBaseMag::getInstance()->getIdFromUsername(name));
+        DataBaseMag::getInstance()->addFriend(DataBaseMag::getInstance()->getIdFromUsername(name), id);
+    }
+
+    int sendId = DataBaseMag::getInstance()->getIdFromUsername(name);
+    emit signalPrivateMsgToClient(AddFriendReply, sendId, resObj);
+
 }
 
 void ClientSocket::ParseAddGroup(const QJsonValue &dataVal)

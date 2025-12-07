@@ -58,9 +58,28 @@ void TcpMsgServer::insertMessageQueue(const QJsonValue &jsonVal, const quint8 &t
     DataBaseMag::getInstance()->insertMessageQueue(requestId,acceptId,type);
 }
 
-void TcpMsgServer::sendUserMessageQueue(const QString &userId)
+void TcpMsgServer::sendUserMessageQueue(const QString &userId)  //上线的Id
 {
-    QList<QVariantMap> list = DataBaseMag::getInstance()->getUserMessageQueue(userId.toInt());
+    if(userId.isEmpty()){
+        qDebug() <<"转发上线消息：用户Id不能为空";
+        return;
+    }
+    QList<QVariantMap> msgList = DataBaseMag::getInstance()->getUserMessageQueue(userId.toInt());
+    qDebug() << msgList;
+//    msgMap["request_userId"] = query.value("request_userId");
+//    msgMap["accept_userId"] = query.value("accept_userId");
+//    msgMap["message_type"] = query.value("message_type");
+    foreach(QVariantMap msg , msgList){
+        quint8 type = static_cast<quint8>(msg["message_type"].toInt());
+        QString id = msg["request_userId"].toString();
+        QString friendName = DataBaseMag::getInstance()->getUsernameFromId(id);
+        QJsonObject jsonObj;
+        jsonObj.insert("type",type);
+        jsonObj.insert("name",friendName);
+
+        SltPrivateMsgToClient(type,userId.toInt(),jsonObj);
+    }
+
 
 }
 

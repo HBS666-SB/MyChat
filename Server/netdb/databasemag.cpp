@@ -106,6 +106,7 @@ void DataBaseMag::createDatabase()
     sql.append(QString("id INTEGER PRIMARY KEY AUTOINCREMENT,"));
     sql.append(QString("request_userId INTEGER NOT NULL,"));
     sql.append(QString("accept_userId INTEGER NOT NULL,"));
+    sql.append(QString("status INTEGER NOT NULL DEFAULT 0,"));  //0=待处理/1=已处理
     sql.append(QString("message_type INTEGER NOT NULL);"));
     query.exec(sql);
 }
@@ -118,6 +119,7 @@ void DataBaseMag::changeAllUserStatus()
     query.addBindValue(OffLine);
     query.exec();
 }
+
 
 E_STATUS DataBaseMag::userRegister(const QString &name, const QString &passwd)
 {
@@ -173,30 +175,22 @@ QJsonObject DataBaseMag::userLogin(const QString &name, const QString &passwd)
     return jsonObj;
 }
 
-E_STATUS DataBaseMag::userAddFriend(const int &userId, const QString &friendName)
+bool DataBaseMag::isFriend(const int &userId, const QString &friendName)
 {
-    //    qDebug() << "添加好友" << userId << friendName;
-    //用户名为空或用户不存在
-    if(friendName.isEmpty() || !haveUser(friendName))
-    {
-        //        qDebug() << "用户名不存在";
-        return AddFriendFailed_NoneUser;
-    }
-
     QSqlQuery query;
-    const QString sql = "INSERT OR IGNORE INTO FRIEND "
-                        "(user_id, friend_id, remark, status, add_time, update_time) "
-                        "VALUES (:user_id, (SELECT id FROM USERINFO WHERE name = :friendName), '',"
-                        " 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+    const QString sql = "SELECT 1 FROM FRIEND "
+                        "WHERE user_id = :user_id "
+                        "AND friend_id = (SELECT id FROM USERINFO WHERE name = :friendName) "
+                        "LIMIT 1";
     query.prepare(sql);
     query.bindValue(":user_id", userId);
     query.bindValue(":friendName", friendName);
 
     if(!query.exec()){
-        qDebug() << "添加好友Sql执行失败";
-        return AddFriendFailed;
+        qDebug() << "判断是否为好友失败";
+        return false;
     }
-    return AddFriendOk;
+     return query.next();
 
 }
 
@@ -317,7 +311,58 @@ void DataBaseMag::insertMessageQueue(const int &senderId, const int &acceptId, q
 
 QList<QVariantMap> DataBaseMag::getUserMessageQueue(const int &userId)
 {
+    QList<QVariantMap> msgList;
+    QStringList  needUpdateIds;
+    QSqlQuery query;
+    QString sql("SELECT id, request_userId, accept_userId, message_type "
+                "FROM MESSAGEQUEUE WHERE accept_userId = :userId AND status = 0;");
+    query.prepare(sql);
+    query.bindValue(":userId",userId);
+    if(!query.exec()){
+        qDebug() << "获取用户的消息队列失败";
+        return msgList;
+    }
+    while(query.next()){
+        QString id = query.value("id").toString();
+        QVariantMap msgMap;
+        msgMap["request_userId"] = query.value("request_userId");
+        msgMap["accept_userId"] = query.value("accept_userId");
+        msgMap["message_type"] = query.value("message_type");
 
+        msgList.append(msgMap);
+        needUpdateIds.append(id);
+    }
+    if(needUpdateIds.isEmpty()){
+        qDebug() << "获取用户消息队列：没有要更新的状态";
+        return msgList;
+    }
+
+    sql = QString("UPDATE MESSAGEQUEUE SET status = 1 where id in (%1);").arg(needUpdateIds.join(","));
+    QSqlQuery updateQuery(sql);
+    if(!updateQuery.exec()){
+        qDebug() << "获取用户消息队列：SQL更新语句有误";
+    }
+
+    return msgList;
+}
+
+void DataBaseMag::addFriend(const int &userId, const int &friendId)
+{
+    QSqlQuery query;
+    QString sql;
+    sql = QString("INSERT INTO FRIEND (user_id, friend_id, remark, status, add_time, update_time)");
+    sql.append("VALUES (:userId, :friendId, :remark, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);");
+
+    query.prepare(sql);
+    query.bindValue(":userId",userId);
+    query.bindValue(":friendId",friendId);
+    query.bindValue(":remark",DataBaseMag::getInstance()->getUsernameFromId(QString::number(friendId)));
+
+    if(!query.exec()){
+        qDebug() << "服务器存储好友信息出错";
+        return;
+    }
+    return;
 }
 
 

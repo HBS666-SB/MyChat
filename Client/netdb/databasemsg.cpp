@@ -62,7 +62,6 @@ bool DatabaseMsg::OpenUserDatabase(const QString &dataName)
     sql = QString("CREATE TABLE IF NOT EXISTS FRIEND (");
     sql.append(QString("id INTEGER PRIMARY KEY AUTOINCREMENT,"));
     sql.append(QString("user_id INTEGER NOT NULL,"));                     // 自己的用户ID
-//    sql.append(QString("friend_id INTEGER NOT NULL,"));                   //好友ID
     sql.append(QString("friend_name VARCHAR(30) NOT NULL,"));             // 好友用户名
     sql.append(QString("remark VARCHAR(30) DEFAULT '',"));                // 好友备注
     sql.append(QString("status INTEGER NOT NULL DEFAULT 0,"));            // 0=待验证/1=已通过/2=已拉黑
@@ -113,20 +112,35 @@ bool DatabaseMsg::OpenMessageDatabase(const QString &dataName)
     return true;
 }
 
-void DatabaseMsg::AddFriend(const int &userId, const QString &friendName)
+void DatabaseMsg::AddFriend(const int &userId, const QString &friendName, int status)
 {
+    E_STATUS friendStatus = isMyFriend(userId, friendName);
+    if(friendStatus == AddFriendOk){    //不是好友
+        QSqlQuery query(userdb);
+        QString sql;
+        sql = QString("INSERT INTO FRIEND (");
+        sql.append("user_id, friend_name, remark, status, add_time, update_time) ");
+        sql.append("VALUES (:userId, :friendName, :remark, :status, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)");
+
+        query.prepare(sql);
+        query.bindValue(":userId",userId);
+        query.bindValue(":friendName", friendName);
+        query.bindValue(":remark",friendName);
+        query.bindValue(":status",status);
+        if (!query.exec()) {
+            qDebug() << "数据库插入好友失败";
+        }
+    }
+    //好友表已经有这条记录，收到同意消息修改status
     QSqlQuery query(userdb);
     QString sql;
-    sql = QString("INSERT INTO FRIEND (");
-    sql.append("user_id, friend_name, remark, status, add_time, update_time) ");
-    sql.append("VALUES (:userId, :friendName, '', 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)");
-
+    sql = QString("UPDATE FRIEND SET status = :status, update_time = CURRENT_TIMESTAMP");
+    sql.append("WHERE user_id = :userId AND friend_name = :friendName;");
     query.prepare(sql);
+    query.bindValue(":status",status);
     query.bindValue(":userId",userId);
-    query.bindValue(":friendName", friendName);
-    if (!query.exec()) {
-        qDebug() << "数据库插入好友失败";
-    }
+    query.bindValue(":friendName",friendName);
+
 }
 
 QJsonArray DatabaseMsg::GetMyFriend(const int &userId) const
@@ -146,20 +160,14 @@ QVector<QJsonObject> DatabaseMsg::QueryHistory(const int &id, const int &count)
 
 E_STATUS DatabaseMsg::isMyFriend(int userId, QString friendName)
 {
-    if(userId <= 0 || friendName.isEmpty()){
-         qWarning() << "isMyFriend: 无效的输入参数，userId=" << userId << " friendName=" << friendName;
-        return AddFriendFailed;
-    }
+
     QSqlQuery query(userdb);
     QString sql = "SELECT status FROM FRIEND WHERE user_id = :userId AND friend_name = :friendName LIMIT 1";
 
     query.prepare(sql);
     query.bindValue(":userId", userId);
     query.bindValue(":friendName", friendName);
-    if(!query.exec()){
-        qDebug() << "查询失败";
-        return AddFriendFailed;
-    }
+    query.exec();
     int status = -1;
     if (query.next()){
         status = query.value("status").toInt();
@@ -171,4 +179,20 @@ E_STATUS DatabaseMsg::isMyFriend(int userId, QString friendName)
     }
     return AddFriendOk; //不是好友
     qDebug() << "status = " << status;
+}
+
+void DatabaseMsg::removeFriend(const QString &friendName)
+{
+    if(friendName.isEmpty()){
+        qDebug() << "删除好友失败，用户名不能为空";
+    }
+    QSqlQuery query;
+    QString sql;
+    sql = QString("DELETE FROM FRIEND WHERE friend_name = :friendId");
+    query.prepare(sql);
+    query.bindValue(":friendId",friendName);
+    if(!query.exec()){
+        qDebug() << "删除好友操作Sql执行失败";
+        return;
+    }
 }

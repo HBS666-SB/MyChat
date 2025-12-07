@@ -49,7 +49,7 @@ void LoginWidget::loginSuccess(const QJsonValue &dataVal)
     MyApp::m_strUserName = ui->lineEditUser->text();
     MyApp::m_strPassword = ui->lineEditPasswd->text();
     //打开该用户的数据库
-
+    qDebug() << "MyApp::m_nId" << MyApp::m_nId;
     DatabaseMsg::getInstance()->OpenUserDatabase(QString("%1user%2.db").arg(MyApp::m_strDatabasePath).arg(MyApp::m_nId));
     DatabaseMsg::getInstance()->OpenMessageDatabase(QString("%1msg%2.db").arg(MyApp::m_strDatabasePath).arg(MyApp::m_nId));
 

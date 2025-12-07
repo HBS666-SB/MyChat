@@ -32,14 +32,16 @@ public:
     bool OpenUserDatabase(const QString &dataName);
     bool OpenMessageDatabase(const QString &dataName);
     // 好友操作
-    void AddFriend(const int &userId, const QString &friendName);
+    void AddFriend(const int &userId, const QString &friendName ,int status);
     QJsonArray GetMyFriend(const int &userId) const;
 
     // 消息操作
     void AddHistoryMsg(const int &userId, const QString &name,
                        const QString &text, const QString &time);
     QVector<QJsonObject> QueryHistory(const int &id, const int &count = 0);
-    E_STATUS isMyFriend(int,QString);
+    E_STATUS isMyFriend(int userId,QString friendName);
+    void removeFriend(const QString &friendName);
+
 
 private:
     static DatabaseMsg *self;

@@ -7,7 +7,7 @@
 MySocket::MySocket(QObject *parent)
 {
     m_tcpSocket = new QTcpSocket(this);
-    m_nId = -1;
+    m_nId = MyApp::m_nId;
     connect(m_tcpSocket,&QTcpSocket::connected,this,&MySocket::sltConnect);
     connect(m_tcpSocket,&QTcpSocket::readyRead,this,&MySocket::sltReadyRead);
     connect(m_tcpSocket,&QTcpSocket::disconnected,this,&MySocket::sltDisconnect);
@@ -112,7 +112,7 @@ void MySocket::sendMessage(const qint8 &type, const QJsonValue &dataVal)
     if (!m_tcpSocket->isOpen()) return;
     QJsonObject json;
     json.insert("type",type);
-    json.insert("from", m_nId);
+    json.insert("from", MyApp::m_nId);
     json.insert("data",dataVal);
 
     QJsonDocument document;
@@ -166,11 +166,6 @@ void MySocket::sendMsgType(const quint8 &nType, const QJsonValue &dataVal)
         emit signalStatus(AddFriendOk,dataVal);
         break;
     }
-    case AddFriendFailed:
-    {
-        emit signalStatus(AddFriendFailed,dataVal);
-        break;
-    }
     case AddFriendFailed_NoneUser:
     {
         emit signalStatus(AddFriendFailed_NoneUser,dataVal);
@@ -179,6 +174,11 @@ void MySocket::sendMsgType(const quint8 &nType, const QJsonValue &dataVal)
     case AddFriendRequist:
     {
         emit signalStatus(AddFriendRequist, dataVal);
+        break;
+    }
+    case AddFriendReply:
+    {
+        emit signalStatus(AddFriendReply,dataVal);
         break;
     }
 
