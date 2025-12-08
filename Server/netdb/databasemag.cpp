@@ -424,6 +424,33 @@ bool DataBaseMag::isOnline(const int &userId)
     return query.value("status").toInt() == OnLine ? true : false;
 }
 
+// 发送Jsonarray  status  head    name    id
+QJsonValue DataBaseMag::getMyFriends(const int &userId)
+{
+    QJsonArray jsonArr;
+    QSqlQuery query;
+    QString sql;//SELECT friend_id FROM user_id = :userId
+    sql = QString("SELECT status, head, name, id FROM USERINFO ");
+    sql.append("WHERE id IN (SELECT friend_id FROM FRIEND WHERE user_id = :userId);");
+    query.prepare(sql);
+    query.bindValue(":userId", userId);
+
+    if(!query.exec()){
+        qDebug() << "获取用户好友失败 sql执行出错";
+    }
+    while(query.next()){
+        QJsonObject jsonObj;
+        jsonObj.insert("status",query.value("status").toInt());
+        jsonObj.insert("head", query.value("head").toString());
+        jsonObj.insert("name", query.value("name").toString());
+        jsonObj.insert("id", query.value("id").toInt());
+        jsonArr.append(jsonObj);
+    }
+
+    QJsonValue sendJsonVal(jsonArr);
+    return sendJsonVal;
+}
+
 
 void DataBaseMag::queryAll()
 {

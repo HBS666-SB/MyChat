@@ -33,7 +33,7 @@ public:
     bool OpenMessageDatabase(const QString &dataName);
     // 好友操作
     void AddFriend(const int &userId, const QString &friendName ,int status);
-    QJsonArray GetMyFriend(const int &userId) const;
+    QJsonValue GetMyFriend(const int &userId) const;
 
     // 消息操作
     void AddHistoryMsg(const int &userId, const QString &name,

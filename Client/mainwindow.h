@@ -21,6 +21,7 @@ public:
     void addFriend(const QJsonValue &dataVal);
     void addFriendRequist(const QJsonValue &dataVal);
     void addFriendReply(const QJsonValue &dataVal);
+    void showServerFriendInfo(const QJsonValue &dataVal);   //显示服务器发送过来的好友信息
 
 private slots:
     void sltButtonClicked(int index);

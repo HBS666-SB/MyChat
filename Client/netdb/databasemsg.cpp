@@ -143,7 +143,7 @@ void DatabaseMsg::AddFriend(const int &userId, const QString &friendName, int st
 
 }
 
-QJsonArray DatabaseMsg::GetMyFriend(const int &userId) const
+QJsonValue DatabaseMsg::GetMyFriend(const int &userId) const
 {
 
 }

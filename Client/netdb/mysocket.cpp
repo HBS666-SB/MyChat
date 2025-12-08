@@ -101,6 +101,7 @@ void MySocket::sltDisconnect()
     qDebug() << "客户端断开连接";
 }
 
+
 void MySocket::sendMessage(const qint8 &type, const QJsonValue &dataVal)
 {
     // 连接服务器
@@ -179,6 +180,11 @@ void MySocket::sendMsgType(const quint8 &nType, const QJsonValue &dataVal)
     case AddFriendReply:
     {
         emit signalStatus(AddFriendReply,dataVal);
+        break;
+    }
+    case GetMyFriends:
+    {
+        emit signalStatus(GetMyFriends, dataVal);
         break;
     }
 

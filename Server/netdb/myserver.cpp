@@ -81,7 +81,7 @@ void TcpMsgServer::sendUserMessageQueue(const QString &userId)  //上线的Id
 
         SltPrivateMsgToClient(type,userId.toInt(),jsonObj);
 
-        qDebug() << "发送消息队列中的消息myserver.cpp 82" << jsonObj;
+//        qDebug() << "发送消息队列中的消息myserver.cpp 82" << jsonObj;
     }
 
 
@@ -134,7 +134,7 @@ void TcpMsgServer::SltPrivateMsgToClient(const quint8 &type, const int &accessId
 
     //转发
     targetClient->SltSendMessage(type, jsonVal);
-    qDebug() << "server.cpp转发出去135" << jsonVal;
+//    qDebug() << "server.cpp转发出去135" << jsonVal;
 }
 
 void TcpMsgServer::SltLoginSuccess(ClientSocket *client, const QString &userId)
@@ -152,4 +152,5 @@ void TcpMsgServer::SltLoginSuccess(ClientSocket *client, const QString &userId)
     m_clientHash.insert(userId, client);
     sendUserMessageQueue(userId);
     qDebug() << "客户端登录成功，ID：" << userId << "，当前在线数：" << m_clientHash.size();
+
 }

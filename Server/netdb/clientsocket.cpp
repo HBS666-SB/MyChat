@@ -161,6 +161,8 @@ void ClientSocket::ParseLogin(const QJsonValue &dataVal)
         if(msg == "ok"){  //不在线
             SltSendMessage(LoginSuccess, jsonObj);
             emit signalLoginSuccess(this,QString::number(m_nId));
+            qDebug() << "登陆成功" << dataVal;
+            SltSendMessage(GetMyFriends,DataBaseMag::getInstance()->getMyFriends(m_nId));
             return;
         }else if(msg == "OnLine"){
             SltSendMessage(LoginRepeat, jsonObj);
@@ -274,7 +276,7 @@ void ClientSocket::ParseCreateGroup(const QJsonValue &dataVal)
 
 void ClientSocket::ParseGetMyFriend(const QJsonValue &dataVal)
 {
-
+// 发送Jsonarray  status  head    name    id
 }
 
 void ClientSocket::ParseGetMyGroups(const QJsonValue &dataVal)

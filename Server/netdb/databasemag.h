@@ -47,6 +47,7 @@ public:
     QList<QVariantMap> getUserMessageQueue(const int &userId);
     void addFriend(const int &userId, const int &friendId);
     bool isOnline(const int &userId);
+    QJsonValue getMyFriends(const int &userId);
 
 signals:
 
