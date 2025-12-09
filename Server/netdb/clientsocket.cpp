@@ -234,7 +234,7 @@ void ClientSocket::ParseAddFriend(const QJsonValue &dataVal)
 
 void ClientSocket::ParseAddFriendReply(const QJsonValue &dataVal)
 {
-//    resObj.insert("id",MyApp::m_nId);
+//    resObj.insert("id",MyApp::m_nId); //
 //    resObj.insert("name",name);       //这个名字是要转发给的对象的名字
 //    resObj.insert("msg","refuse");
     if(!dataVal.isObject()){
@@ -246,12 +246,14 @@ void ClientSocket::ParseAddFriendReply(const QJsonValue &dataVal)
     QString name = jsonObj.value("name").toString();
     QString msg = jsonObj.value("msg").toString();
     QJsonObject resObj;
+    resObj.insert("id", id);
     resObj.insert("name",DataBaseMag::getInstance()->getUsernameFromId(QString::number(id)));
     resObj.insert("msg",msg);
     if(msg.compare("accept") == 0){
         DataBaseMag::getInstance()->addFriend(id, DataBaseMag::getInstance()->getIdFromUsername(name));
         DataBaseMag::getInstance()->addFriend(DataBaseMag::getInstance()->getIdFromUsername(name), id);
     }
+
 
     int sendId = DataBaseMag::getInstance()->getIdFromUsername(name);
     if(!DataBaseMag::getInstance()->isOnline(sendId)){
@@ -260,7 +262,7 @@ void ClientSocket::ParseAddFriendReply(const QJsonValue &dataVal)
     }
     emit signalPrivateMsgToClient(AddFriendReply, sendId, resObj);
 
-    qDebug() << "套接字发送AddFriendReply信号clientsocket.cpp" << resObj;
+//    qDebug() << "套接字发送AddFriendReply信号clientsocket.cpp" << resObj;
 
 }
 

@@ -61,7 +61,7 @@ bool DatabaseMsg::OpenUserDatabase(const QString &dataName)
 
     sql = QString("CREATE TABLE IF NOT EXISTS FRIEND (");
     sql.append(QString("id INTEGER PRIMARY KEY AUTOINCREMENT,"));
-    sql.append(QString("user_id INTEGER NOT NULL,"));                     // 自己的用户ID
+    sql.append(QString("user_id INTEGER NOT NULL,"));                     // 好友的用户ID
     sql.append(QString("friend_name VARCHAR(30) NOT NULL,"));             // 好友用户名
     sql.append(QString("remark VARCHAR(30) DEFAULT '',"));                // 好友备注
     sql.append(QString("status INTEGER NOT NULL DEFAULT 0,"));            // 0=待验证/1=已通过/2=已拉黑
@@ -94,7 +94,7 @@ bool DatabaseMsg::OpenMessageDatabase(const QString &dataName)
     QString sql;
     sql = QString("CREATE TABLE IF NOT EXISTS MSGINFO (");
     sql.append(QString("id INTEGER PRIMARY KEY AUTOINCREMENT,"));
-    sql.append(QString("user_id INTEGER NOT NULL,"));
+    sql.append(QString("user_id INTEGER NOT NULL,"));   //好友的Id
     sql.append(QString("name VARCHAR(20) NOT NULL,"));
     sql.append(QString("head VARCHAR(100) DEFAULT 'default.png',"));
     sql.append(QString("datetime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,"));
@@ -114,7 +114,7 @@ bool DatabaseMsg::OpenMessageDatabase(const QString &dataName)
 
 void DatabaseMsg::AddFriend(const int &userId, const QString &friendName, int status)
 {
-    E_STATUS friendStatus = isMyFriend(userId, friendName);
+    E_STATUS friendStatus = isMyFriend(friendName);
     if(friendStatus == AddFriendOk){    //不是好友
         QSqlQuery query(userdb);
         QString sql;
@@ -148,6 +148,7 @@ QJsonValue DatabaseMsg::GetMyFriend(const int &userId) const
 
 }
 
+
 void DatabaseMsg::AddHistoryMsg(const int &userId, const QString &name, const QString &text, const QString &time)
 {
 
@@ -158,14 +159,13 @@ QVector<QJsonObject> DatabaseMsg::QueryHistory(const int &id, const int &count)
 
 }
 
-E_STATUS DatabaseMsg::isMyFriend(int userId, QString friendName)
+E_STATUS DatabaseMsg::isMyFriend(QString friendName)
 {
 
     QSqlQuery query(userdb);
-    QString sql = "SELECT status FROM FRIEND WHERE user_id = :userId AND friend_name = :friendName LIMIT 1";
+    QString sql = "SELECT status FROM FRIEND WHERE friend_name = :friendName LIMIT 1";
 
     query.prepare(sql);
-    query.bindValue(":userId", userId);
     query.bindValue(":friendName", friendName);
     query.exec();
     int status = -1;

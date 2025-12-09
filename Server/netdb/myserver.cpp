@@ -65,7 +65,7 @@ void TcpMsgServer::sendUserMessageQueue(const QString &userId)  //上线的Id
         return;
     }
     QList<QVariantMap> msgList = DataBaseMag::getInstance()->getUserMessageQueue(userId.toInt());
-    qDebug() << msgList;
+//    qDebug() << msgList;
 //    msgMap["request_userId"] = query.value("request_userId");
 //    msgMap["accept_userId"] = query.value("accept_userId");
 //    msgMap["message_type"] = query.value("message_type");
@@ -77,11 +77,9 @@ void TcpMsgServer::sendUserMessageQueue(const QString &userId)  //上线的Id
         jsonObj.insert("type",type);
         jsonObj.insert("name",friendName);
 
-
-
-        SltPrivateMsgToClient(type,userId.toInt(),jsonObj);
-
-//        qDebug() << "发送消息队列中的消息myserver.cpp 82" << jsonObj;
+//        qDebug() << "myServer:80 转发离线队列消息" << jsonObj;
+        QJsonValue sendVal = jsonObj;
+        SltPrivateMsgToClient(type,userId.toInt(),sendVal);
     }
 
 
@@ -129,11 +127,14 @@ void TcpMsgServer::SltPrivateMsgToClient(const quint8 &type, const int &accessId
     if (!targetClient) {
         qDebug() << "[单播] 目标用户不存在或已下线：" << accessId;
         insertMessageQueue(jsonVal,type);
+        //resObj.insert("name",senderName);   //requestName
+        //resObj.insert("requestId",senderId);
+        //resObj.insert("acceptId",friendId);
         return;
     }
 
     //转发
-    targetClient->SltSendMessage(type, jsonVal);
+    targetClient->SltSendMessage(type, QJsonValue(jsonVal));
 //    qDebug() << "server.cpp转发出去135" << jsonVal;
 }
 
@@ -154,3 +155,4 @@ void TcpMsgServer::SltLoginSuccess(ClientSocket *client, const QString &userId)
     qDebug() << "客户端登录成功，ID：" << userId << "，当前在线数：" << m_clientHash.size();
 
 }
+

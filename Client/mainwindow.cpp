@@ -242,10 +242,10 @@ void MainWindow::onAddFriendMenuDidSelected(QAction *action)
             return;
         }
         // 首先判断该用户是否已经是我的好友了
-        if (DatabaseMsg::getInstance()->isMyFriend(MyApp::m_nId, name) == AddFriendFailed_IsHad) {
+        if (DatabaseMsg::getInstance()->isMyFriend(name) == AddFriendFailed_IsHad) {
             QMessageBox::information(this,"添加好友", "该用户已经是你的好友了！");
             return;
-        }else if(DatabaseMsg::getInstance()->isMyFriend(MyApp::m_nId, name) == AddFriendFailed_Readd){
+        }else if(DatabaseMsg::getInstance()->isMyFriend(name) == AddFriendFailed_Readd){
             QMessageBox::warning(this,"添加好友", "已经提交过申请，请不要重复发送验证信息");
             return;
         }
@@ -319,7 +319,9 @@ void MainWindow::addFriend(const QJsonValue &dataVal)
     }
     QJsonObject jsonObj = dataVal.toObject();
     QString friendName = jsonObj.value("name").toString();
-    DatabaseMsg::getInstance()->AddFriend(MyApp::m_nId,friendName,0);
+    int userId = jsonObj.value("id").toInt();
+
+    DatabaseMsg::getInstance()->AddFriend(userId,friendName,0);
 
 }
 
@@ -332,6 +334,7 @@ void MainWindow::addFriendRequist(const QJsonValue &dataVal)
     QJsonObject jsonObj = dataVal.toObject();
     //要对方的名字
     QString name = jsonObj.value("name").toString();
+    int id = jsonObj.value("requestId").toInt();               //好友Id
     QMessageBox::StandardButton result = QMessageBox::question(
                 this,"添加好友",
                 QString("'%1'添加你为好友").arg(name),
@@ -339,7 +342,7 @@ void MainWindow::addFriendRequist(const QJsonValue &dataVal)
                 QMessageBox::Ok);
     if(result == QMessageBox::Ok){
         qDebug() << "已同意好友申请";
-        DatabaseMsg::getInstance()->AddFriend(MyApp::m_nId,name,1);
+        DatabaseMsg::getInstance()->AddFriend(id,name,1);
 
         QJsonObject resObj;
         resObj.insert("id",MyApp::m_nId);
@@ -365,10 +368,11 @@ void MainWindow::addFriendReply(const QJsonValue &dataVal)
         return;
     }
     QJsonObject jsonObj = dataVal.toObject();
+    int id = jsonObj.value("id").toInt();
     QString friendName = jsonObj.value("name").toString();
     QString msg = jsonObj.value("msg").toString();
     if(msg.compare("accept") == 0){
-        DatabaseMsg::getInstance()->AddFriend(MyApp::m_nId,friendName,1);
+        DatabaseMsg::getInstance()->AddFriend(id,friendName,1);
         qDebug() << "对方已同意你的好友申请";
         return;
     }

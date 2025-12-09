@@ -39,7 +39,7 @@ public:
     void AddHistoryMsg(const int &userId, const QString &name,
                        const QString &text, const QString &time);
     QVector<QJsonObject> QueryHistory(const int &id, const int &count = 0);
-    E_STATUS isMyFriend(int userId,QString friendName);
+    E_STATUS isMyFriend(QString friendName);
     void removeFriend(const QString &friendName);
 
 
