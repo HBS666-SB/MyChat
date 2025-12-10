@@ -45,6 +45,10 @@ private:
 public:
     void insertQQCell(QQCell * cell);
     void removeQQCell(QQCell * cell);
+
+    void clearAllCells();
+    void clearListWidgetItems();
+
     void upload();
     QQCell *getGroupForName(QString *groupName);
 

@@ -14,7 +14,6 @@ public:
 
     void connectToHost(const QString &ip, quint16 port);
     void connectToHost(const QHostAddress &host, quint16 port); // 与服务器建立Tcp连接
-    void sendMessage(const qint8 &type, const QJsonValue &dataVal);
 
     void ParseLogin(const QJsonValue &dataVal);
     void sendMsgType(const quint8 &nType,const QJsonValue &dataVal);
@@ -24,6 +23,9 @@ public:
 signals:
     void signalStatus(const quint8 &status,const QJsonValue &dataVal);
     void signalConnectSuccess();
+
+public slots:
+    void sendMessage(const quint8 &type, const QJsonValue &dataVal);
 
 private slots:
     void sltReadyRead();

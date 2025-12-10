@@ -139,6 +139,10 @@
            <property name="text">
             <string/>
            </property>
+           <property name="icon">
+            <iconset resource="images.qrc">
+             <normaloff>:/resource/common/ic_login_cfg.png</normaloff>:/resource/common/ic_login_cfg.png</iconset>
+           </property>
           </widget>
          </item>
          <item>

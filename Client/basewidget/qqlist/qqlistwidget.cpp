@@ -70,6 +70,42 @@ void QQListWidget::removeQQCell(QQCell * cell)
     upload();
 }
 
+void QQListWidget::clearAllCells()
+{
+    for(QQCell* groupCell : cells){
+        if(groupCell != nullptr){
+            for(QQCell* childCell : groupCell->childs){
+                if(childCell != nullptr){
+                    delete childCell;
+                    childCell = nullptr;
+                }
+            }
+            groupCell->childs.clear(); // 清空子项列表，避免野指针
+
+            delete groupCell;
+            groupCell = nullptr;
+        }
+    }
+
+    cells.clear();  //清空数据，防止访问野指针
+
+    clearListWidgetItems();
+}
+
+void QQListWidget::clearListWidgetItems()
+{
+    while (count() > 0) {
+        QListWidgetItem* item = takeItem(0);
+        QWidget* widget = itemWidget(item);
+        if (widget != nullptr) {
+            delete widget; // 释放控件
+            widget = nullptr;
+        }
+        delete item; // 释放Item本身
+        item = nullptr;
+    }
+}
+
 /**
  * @brief QQListWidget::upload
  * 更新
@@ -143,7 +179,7 @@ void QQListWidget::onGroupOpenDidChanged(QQListViewGroup */*group*/)
 
 void QQListWidget::onChildDidSelected(QQListViewChild *child)
 {
-//    qDebug() << "clicked" << child->cell->name;
+    //    qDebug() << "clicked" << child->cell->name;
     Q_UNUSED(child);
 }
 

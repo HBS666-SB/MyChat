@@ -63,6 +63,16 @@ void ClientSocket::sendMsgType(const quint8 &nType, const QJsonValue &dataVal)
         ParseAddFriendReply(dataVal);
         break;
     }
+    case RefreshFriends:
+    {
+        ParseRefreshFriend(dataVal);
+        break;
+    }
+    case SendMsg:
+    {
+        ParseSendMsg(dataVal);
+        break;
+    }
     }
 }
 
@@ -133,9 +143,9 @@ void ClientSocket::SltReadyRead()
         QJsonDocument doc = QJsonDocument::fromJson(jsonData);
         if (doc.isObject()) {
             QJsonObject jsonObj = doc.object();
-            quint8 nType = jsonObj["type"].toInt();
-            QString from = jsonObj["from"].toString();
+            quint8 nType = static_cast<quint8>(jsonObj["type"].toInt());            QString from = jsonObj["from"].toString();
             QJsonValue dataVal = jsonObj["data"];
+            m_nId = jsonObj["from"].toInt();
 
             sendMsgType(nType,dataVal);
         }
@@ -215,21 +225,21 @@ void ClientSocket::ParseAddFriend(const QJsonValue &dataVal)
         SltSendMessage(AddFriendFailed_NoneUser,jsonObj);
         return;
     }
-    if(DataBaseMag::getInstance()->isFriend(GetUserId(),QString::number(friendId))){
-        SltSendMessage(AddFriendOk,jsonObj);
-        return;
-    }
+//    if(DataBaseMag::getInstance()->isFriend(GetUserId(),QString::number(friendId))){
+//        SltSendMessage(AddFriendOk,jsonObj);
+//        return;
+//    }
     QString senderName = DataBaseMag::getInstance()->getUsernameFromId(QString::number(senderId));
 
 //    qDebug() << jsonObj << "senderName" << senderName << "senderId" << senderId;
     QJsonObject resObj;
 
     resObj.insert("name",senderName);   //requestName
-    resObj.insert("requestId",senderId);
-    resObj.insert("acceptId",friendId);
+    resObj.insert("id",senderId);
+    resObj.insert("targetId",friendId);
     QJsonValue resVal = resObj;
 
-    emit signalPrivateMsgToClient(AddFriendRequist, friendId,resVal);
+    emit signalPrivateMsgToClient(m_nId ,friendId, AddFriendRequist,resVal);
 }
 
 void ClientSocket::ParseAddFriendReply(const QJsonValue &dataVal)
@@ -260,9 +270,9 @@ void ClientSocket::ParseAddFriendReply(const QJsonValue &dataVal)
         DataBaseMag::getInstance()->insertMessageQueue(static_cast<int>(id),static_cast<int>(sendId),AddFriendReply, dataVal);
         return;
     }
-    emit signalPrivateMsgToClient(AddFriendReply, sendId, resObj);
+    emit signalPrivateMsgToClient(m_nId, sendId,AddFriendReply, resObj);
 
-//    qDebug() << "套接字发送AddFriendReply信号clientsocket.cpp" << resObj;
+    qDebug() << "套接字发送AddFriendReply信号clientsocket.cpp" << resObj;
 
 }
 
@@ -288,7 +298,18 @@ void ClientSocket::ParseGetMyGroups(const QJsonValue &dataVal)
 
 void ClientSocket::ParseRefreshFriend(const QJsonValue &dataVal)
 {
+    if(!dataVal.isObject()){
+        qDebug() << "客户端发送的刷新请求出错 dataVal = " << dataVal;
+        return;
 
+    }
+    QJsonObject jsonObj = dataVal.toObject();
+    int id = jsonObj.value("id").toInt();
+
+    QJsonValue sendVal = DataBaseMag::getInstance()->getMyFriends(id);
+
+
+    SltSendMessage(RefreshFriends, sendVal);
 }
 
 void ClientSocket::ParseRefreshGroups(const QJsonValue &dataVal)
@@ -308,5 +329,20 @@ void ClientSocket::ParseGroupMessages(const QByteArray &reply)
 
 void ClientSocket::ParseFaceMessages(const QByteArray &reply)
 {
+
+}
+
+void ClientSocket::ParseSendMsg(const QJsonValue &dataVal)
+{
+    if(!dataVal.isObject()){
+        qDebug() << "发送消息功能出错，收到的信息不是JsonObject";
+        return;
+    }
+    QJsonObject jsonObj = dataVal.toObject();
+    QJsonObject resObj;
+    resObj.insert("id", m_nId);
+    resObj.insert("msg",jsonObj.value("msg"));
+
+    emit signalPrivateMsgToClient(m_nId, jsonObj.value("id").toInt(),SendMsg, QJsonValue(resObj));
 
 }

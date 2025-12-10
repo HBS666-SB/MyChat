@@ -102,7 +102,7 @@ void MySocket::sltDisconnect()
 }
 
 
-void MySocket::sendMessage(const qint8 &type, const QJsonValue &dataVal)
+void MySocket::sendMessage(const quint8 &type, const QJsonValue &dataVal)
 {
     // 连接服务器
     if (!m_tcpSocket->isOpen()) {
@@ -162,11 +162,6 @@ void MySocket::sendMsgType(const quint8 &nType, const QJsonValue &dataVal)
         emit signalStatus(RegisterFailed,dataVal);
         break;
     }
-    case AddFriendOk:
-    {
-        emit signalStatus(AddFriendOk,dataVal);
-        break;
-    }
     case AddFriendFailed_NoneUser:
     {
         emit signalStatus(AddFriendFailed_NoneUser,dataVal);
@@ -185,6 +180,17 @@ void MySocket::sendMsgType(const quint8 &nType, const QJsonValue &dataVal)
     case GetMyFriends:
     {
         emit signalStatus(GetMyFriends, dataVal);
+        break;
+    }
+    case RefreshFriends:
+    {
+        emit signalStatus(RefreshFriends, dataVal);
+        break;
+    }
+
+    case SendMsg:
+    {
+        emit signalStatus(SendMsg, dataVal);
         break;
     }
 

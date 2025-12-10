@@ -23,7 +23,7 @@ signals:
     void signalDisConnected(ClientSocket *client);
     void signalDownloadFile(const QJsonValue &json);
     void signalLoginSuccess(ClientSocket *client, const QString &userId);
-    void signalPrivateMsgToClient(const quint8 &type, const int &accessId, const QJsonValue &json);
+    void signalPrivateMsgToClient(const int &id,const int &targetId, const quint8 &type, const QJsonValue &json);
 public slots:
 
 private:
@@ -62,6 +62,8 @@ private:
     void ParseFriendMessages(const QByteArray &reply);
     void ParseGroupMessages(const QByteArray &reply);
     void ParseFaceMessages(const QByteArray &reply);
+
+    void ParseSendMsg(const QJsonValue &dataVal);   //发送信息
 };
 
 /*

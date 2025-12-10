@@ -43,7 +43,7 @@ TcpMsgServer::~TcpMsgServer()
 
 }
 
-void TcpMsgServer::insertMessageQueue(const QJsonValue &jsonVal, const quint8 &type)
+void TcpMsgServer::insertMessageQueue(const int &send, const int &getId, const QJsonValue &jsonVal, const quint8 &type)
 {
     //    resObj.insert("requestName",senderName);
     //    resObj.insert("requestId",senderId);
@@ -53,9 +53,7 @@ void TcpMsgServer::insertMessageQueue(const QJsonValue &jsonVal, const quint8 &t
         return ;
     }
     QJsonObject jsonObj = jsonVal.toObject();
-    int requestId = jsonObj.value("requestId").toInt();
-    int acceptId = jsonObj.value("acceptId").toInt();
-    DataBaseMag::getInstance()->insertMessageQueue(requestId,acceptId,type, jsonObj);
+    DataBaseMag::getInstance()->insertMessageQueue(send,getId,type, jsonObj);
 }
 
 void TcpMsgServer::sendUserMessageQueue(const QString &userId)  //上线的Id
@@ -71,15 +69,16 @@ void TcpMsgServer::sendUserMessageQueue(const QString &userId)  //上线的Id
 //    msgMap["message_type"] = query.value("message_type");
     foreach(QVariantMap msg , msgList){
         quint8 type = static_cast<quint8>(msg["message_type"].toInt());
-        QString id = msg["request_userId"].toString();
-        QString friendName = DataBaseMag::getInstance()->getUsernameFromId(id);
+        int id = msg["request_userId"].toInt();
+        int targetId = msg["accept_userId"].toInt();
+        QString friendName = DataBaseMag::getInstance()->getUsernameFromId(QString::number(targetId));
         QJsonObject jsonObj = msg["data"].toJsonObject();
         jsonObj.insert("type",type);
         jsonObj.insert("name",friendName);
 
-//        qDebug() << "myServer:80 转发离线队列消息" << jsonObj;
+        qDebug() << "myServer:80 转发离线队列消息给" << friendName;
         QJsonValue sendVal = jsonObj;
-        SltPrivateMsgToClient(type,userId.toInt(),sendVal);
+        SltPrivateMsgToClient(id, targetId, type,sendVal);
     }
 
 
@@ -117,19 +116,16 @@ void TcpMsgServer::SltDisConnected(ClientSocket *client)
     client->deleteLater();
 }
 
-void TcpMsgServer::SltPrivateMsgToClient(const quint8 &type, const int &accessId, const QJsonValue &jsonVal)
+void TcpMsgServer::SltPrivateMsgToClient(const int &id, const int &targetId, const quint8 &type, const QJsonValue &jsonVal)
 {
-    if(accessId < 0){
+    if(targetId < 0){
         qDebug() << "单播目标Id为空";
         return;
     }
-    ClientSocket *targetClient = m_clientHash.value(QString::number(accessId), nullptr);
+    ClientSocket *targetClient = m_clientHash.value(QString::number(targetId), nullptr);
     if (!targetClient) {
-        qDebug() << "[单播] 目标用户不存在或已下线：" << accessId;
-        insertMessageQueue(jsonVal,type);
-        //resObj.insert("name",senderName);   //requestName
-        //resObj.insert("requestId",senderId);
-        //resObj.insert("acceptId",friendId);
+        qDebug() << "[单播] 目标用户不存在或已下线：" << targetId;
+        insertMessageQueue(id, targetId, jsonVal, type);
         return;
     }
 

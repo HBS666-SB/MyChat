@@ -33,13 +33,13 @@ public:
     bool OpenMessageDatabase(const QString &dataName);
     // 好友操作
     void AddFriend(const int &userId, const QString &friendName ,int status);
-    QJsonValue GetMyFriend(const int &userId) const;
+    QJsonValue GetMyFriend();
 
     // 消息操作
     void AddHistoryMsg(const int &userId, const QString &name,
                        const QString &text, const QString &time);
     QVector<QJsonObject> QueryHistory(const int &id, const int &count = 0);
-    E_STATUS isMyFriend(QString friendName);
+    bool isMyFriend(QString friendName);
     void removeFriend(const QString &friendName);
 
 

@@ -168,7 +168,6 @@ typedef enum {
     RegisterOk,
     RegisterFailed,
 
-    AddFriendOk,
     AddFriendFailed_NoneUser,   //用户不存在
     AddFriendFailed_IsHad,  //已经有好友了状态为1
     AddFriendFailed_Readd,  //重复添加状态为0(申请还未同意/拒绝)

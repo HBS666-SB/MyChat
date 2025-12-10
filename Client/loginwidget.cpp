@@ -26,7 +26,6 @@ LoginWidget::LoginWidget(QWidget *parent) :
     });
     m_tcpSocket->connectToHost(MyApp::m_strHostAddr,MyApp::m_nMsgPort);
 
-
 }
 
 LoginWidget::~LoginWidget()

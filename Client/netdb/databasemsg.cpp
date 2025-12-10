@@ -4,6 +4,7 @@
 #include <QVector>
 #include <QDebug>
 #include <QSqlQuery>
+#include <QSqlError>
 
 DatabaseMsg *DatabaseMsg::self = nullptr;
 DatabaseMsg::DatabaseMsg(QObject *parent) : QObject(parent)
@@ -104,7 +105,7 @@ bool DatabaseMsg::OpenMessageDatabase(const QString &dataName)
     sql.append(QString("direction INTEGER NOT NULL DEFAULT 0);"));
 
     if (!query.exec(sql)) {
-        qDebug() << "创建消息表MSGINFO失败";
+        qDebug() << "创建消息表MSGINFO失败" << query.lastError();
         msgdb.close();
         return false;
     }
@@ -114,8 +115,8 @@ bool DatabaseMsg::OpenMessageDatabase(const QString &dataName)
 
 void DatabaseMsg::AddFriend(const int &userId, const QString &friendName, int status)
 {
-    E_STATUS friendStatus = isMyFriend(friendName);
-    if(friendStatus == AddFriendOk){    //不是好友
+    bool isFriend = isMyFriend(friendName);
+    if(!isFriend){    //不是好友
         QSqlQuery query(userdb);
         QString sql;
         sql = QString("INSERT INTO FRIEND (");
@@ -128,7 +129,7 @@ void DatabaseMsg::AddFriend(const int &userId, const QString &friendName, int st
         query.bindValue(":remark",friendName);
         query.bindValue(":status",status);
         if (!query.exec()) {
-            qDebug() << "数据库插入好友失败";
+            qDebug() << "数据库插入好友失败" << query.lastError();
         }
     }
     //好友表已经有这条记录，收到同意消息修改status
@@ -143,9 +144,24 @@ void DatabaseMsg::AddFriend(const int &userId, const QString &friendName, int st
 
 }
 
-QJsonValue DatabaseMsg::GetMyFriend(const int &userId) const
+QJsonValue DatabaseMsg::GetMyFriend()
 {
+    QJsonArray jsonArr;
+    QSqlQuery query;
+    QString sql;
+    sql = QString("SELECT user_id FROM FRIEND;");
 
+    if(!query.exec(sql)){
+        qDebug() << "查询我的好友Id失败" << query.lastError();
+        return  QJsonValue();
+    }
+    while(query.next()){
+        QJsonObject jsonObj;
+        jsonObj.insert("id", query.value("user_id").toInt());
+        jsonArr.append(jsonObj);
+    }
+    QJsonValue jsonVal(jsonArr);
+    return jsonVal;
 }
 
 
@@ -159,26 +175,32 @@ QVector<QJsonObject> DatabaseMsg::QueryHistory(const int &id, const int &count)
 
 }
 
-E_STATUS DatabaseMsg::isMyFriend(QString friendName)
+bool DatabaseMsg::isMyFriend(QString friendName)
 {
 
     QSqlQuery query(userdb);
-    QString sql = "SELECT status FROM FRIEND WHERE friend_name = :friendName LIMIT 1";
+    QString sql = "SELECT friend_name FROM FRIEND WHERE friend_name = :friendName LIMIT 1";
 
     query.prepare(sql);
     query.bindValue(":friendName", friendName);
     query.exec();
-    int status = -1;
-    if (query.next()){
-        status = query.value("status").toInt();
-        if(status == 0){
-            return AddFriendFailed_Readd;   //添加申请还未通过
-        }else if(status == 1 || status == 2){
-            return  AddFriendFailed_IsHad;  //已经是好友了
-        }
+
+    if(!query.next()){
+         qDebug() << "查询是不是好友失败" << query.lastError();
+        return false;     //不是好友
     }
-    return AddFriendOk; //不是好友
-    qDebug() << "status = " << status;
+    return true;    //是好友
+
+//    if (query.next()){
+//        status = query.value("status").toInt();
+//        if(status == 0){
+//            return AddFriendFailed_Readd;   //添加申请还未通过
+//        }else if(status == 1 || status == 2){
+//            return  AddFriendFailed_IsHad;  //已经是好友了
+//        }
+//    }
+//    return AddFriendOk; //不是好友
+//    qDebug() << "status = " << status;
 }
 
 void DatabaseMsg::removeFriend(const QString &friendName)

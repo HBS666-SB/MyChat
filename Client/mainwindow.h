@@ -6,6 +6,7 @@
 #include <QSystemTrayIcon>
 class QButtonGroup;
 class QQCell;
+class ChatWindow;
 namespace Ui {
 class MainWindow;
 }
@@ -18,10 +19,12 @@ public:
     explicit MainWindow(MySocket *socket, QWidget *parent = nullptr);
     ~MainWindow();
 
-    void addFriend(const QJsonValue &dataVal);
+//    void addFriend(const QJsonValue &dataVal);
     void addFriendRequist(const QJsonValue &dataVal);
     void addFriendReply(const QJsonValue &dataVal);
     void showServerFriendInfo(const QJsonValue &dataVal);   //显示服务器发送过来的好友信息
+    void reFreshFriends(const QJsonValue &dataVal);
+    void receiveMessage(const QJsonValue &dataVal);     //解析消息数据
 
 private slots:
     void sltButtonClicked(int index);
@@ -33,10 +36,12 @@ private slots:
 
     void setHead(const QString &headFile);  //设置头像
     void onAddFriendMenuDidSelected(QAction* action);
-    void SltFriendsClicked(QQCell *action);
+    void SltFriendsClicked(QQCell *cell);
     void onChildPopMenuDidSelected(QAction* action);
 
     void sltStatus(const quint8 &status,const QJsonValue &dataVal);
+
+    void SltFriendChatWindowClose();
 private:
     // 添加系统菜单处理
     void InitSysMenu();
@@ -50,6 +55,7 @@ private:
 
     QSystemTrayIcon *systemTrayIcon;
     bool m_bQuit;   // 主动退出操作时不进行断线匹配
+    QList<ChatWindow *> m_chatFriendWindows;
 
 };
 

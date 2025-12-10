@@ -6,7 +6,9 @@ HEADERS += \
     $$PWD/qqlist/qqlistviewgroup.h \
     $$PWD/qqlist/qqpopmenuwidget.h \
     $$PWD/qqlist/qqlistviewchild.h \
-    $$PWD/qqlist/qqlistwidget.h
+    $$PWD/qqlist/qqlistwidget.h \
+    $$PWD/chatbubble.h \
+    $$PWD/iteminfo.h \
 
 SOURCES += \
     $$PWD/customwidget.cpp \
@@ -14,7 +16,9 @@ SOURCES += \
     $$PWD/qqlist/qqlistviewgroup.cpp \
     $$PWD/qqlist/qqpopmenuwidget.cpp \
     $$PWD/qqlist/qqlistviewchild.cpp \
-    $$PWD/qqlist/qqlistwidget.cpp
+    $$PWD/qqlist/qqlistwidget.cpp \
+    $$PWD/chatbubble.cpp \
+    $$PWD/iteminfo.cpp \
 
 FORMS += \
-    $$PWD/qqlist/qqlistviewgroup.ui
+    $$PWD/qqlist/qqlistviewgroup.ui \

@@ -27,7 +27,7 @@ CONFIG += c++11
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
-    loginwidget.cpp
+    loginwidget.cpp \
 
 HEADERS += \
         mainwindow.h \
@@ -35,7 +35,7 @@ HEADERS += \
 
 FORMS += \
         mainwindow.ui \
-    loginwidget.ui
+    loginwidget.ui \
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
@@ -45,6 +45,7 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 include(comapi/comapi.pri)
 include(basewidget/basewidget.pri)
 include(netdb/netdb.pri)
+include(uipage/uipage.pri)
 
 RESOURCES += \
     images.qrc
