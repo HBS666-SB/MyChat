@@ -11,6 +11,7 @@
 #include "netdb/databasemsg.h"
 #include <netdb/databasemsg.h>
 #include "comapi/unit.h"
+#include <basewidget/iteminfo.h>
 #include <comapi/global.h>
 #include <uipage/chatwindow.h>
 
@@ -292,13 +293,9 @@ void MainWindow::SltFriendsClicked(QQCell *cell)
         }
     }
     ChatWindow *chatWindow = new ChatWindow();
-//    connect(chatWindow, SIGNAL(signalSendMessage(const quint8, const QJsonValue)),
-//            m_tcpSocket, SLOT(sendMessage(const quint8, const QJsonValue)));
 
     connect(chatWindow,&ChatWindow::signalSendMessage, m_tcpSocket,&MySocket::sendMessage);
     connect(chatWindow,&ChatWindow::signalClose, this,&MainWindow::SltFriendChatWindowClose);
-//    connect(chatWindow, SIGNAL(signalClose()), this, SLOT(SltFriendChatWindowClose()));
-
     chatWindow->setCell(cell);
     chatWindow->show();
 
@@ -345,15 +342,14 @@ void MainWindow::SltFriendChatWindowClose()
 {
     ChatWindow *chatWindow = (ChatWindow*)sender();
 
-    disconnect(chatWindow, SIGNAL(signalSendMessage(quint8,QJsonValue)), m_tcpSocket, SLOT(sendMessage(quint8,QJsonValue)));
-    disconnect(chatWindow, SIGNAL(signalClose()), this, SLOT(SltFriendChatWindowClose()));
+    disconnect(chatWindow,&ChatWindow::signalSendMessage, m_tcpSocket,&MySocket::sendMessage);
+    disconnect(chatWindow,&ChatWindow::signalClose, this,&MainWindow::SltFriendChatWindowClose);
 
     if(!this->isVisible() && m_chatFriendWindows.size() == 1){
         this->show();
     }
     m_chatFriendWindows.removeOne(chatWindow);
     chatWindow->deleteLater();
-
     qDebug() << "m_chatFriendWindows.sizer() = " << m_chatFriendWindows.size();
 }
 
@@ -497,9 +493,17 @@ void MainWindow::receiveMessage(const QJsonValue &dataVal)
     }
     QJsonObject jsonObj = dataVal.toObject();
     int id = jsonObj.value("id").toInt();   //好友的Id
-    QString msg = jsonObj.value("msg").toString();
 
-    qDebug() << id << msg;
+    foreach(ChatWindow* window, m_chatFriendWindows){
+        if(window->getUserId() == id){
+            window->AddMessage(dataVal);
+            return;
+        }
+    }
+
+    //下面写没有开启这个好友聊天窗口时的逻辑
+
+
 }
 
 

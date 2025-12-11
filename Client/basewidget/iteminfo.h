@@ -9,8 +9,11 @@
 class ItemInfo
 {
 public:
-    ItemInfo();
-    ItemInfo(const QString& strName, const QString& datetime, const QString &pixmap, const QString &text, const QString& strSize, const quint8 &orientation = Right, const quint8 &msgType = Text);
+    ItemInfo(QWidget *parent = nullptr);
+    ItemInfo(const QString& strName, const QString& datetime,
+             const QString &pixmap, const QString &text,
+             const QString& strSize, const quint8 &orientation = Right,
+             const quint8 &msgType = Text ,QWidget *parent = nullptr);
 
     ~ItemInfo();
 

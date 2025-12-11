@@ -1,6 +1,6 @@
 #include "iteminfo.h"
 
-ItemInfo::ItemInfo() :
+ItemInfo::ItemInfo(QWidget *parent) :
     m_strName(""),
     m_strDatetime(""),
     m_strPixmap(""),
@@ -13,8 +13,7 @@ ItemInfo::ItemInfo() :
 
 }
 
-
-ItemInfo::ItemInfo(const QString &strName, const QString &datetime, const QString &pixmap, const QString &text, const QString &strSize, const quint8 &orientation, const quint8 &msgType) :
+ItemInfo::ItemInfo(const QString &strName, const QString &datetime, const QString &pixmap, const QString &text, const QString &strSize, const quint8 &orientation, const quint8 &msgType, QWidget *parent) :
     m_strName(strName),
     m_strDatetime(datetime),
     m_strPixmap(pixmap),
@@ -33,7 +32,7 @@ ItemInfo::~ItemInfo() {
 
 void ItemInfo::SetName(const QString &text)
 {
-        m_strName = text;
+    m_strName = text;
 }
 
 QString ItemInfo::GetName() const
