@@ -1,18 +1,18 @@
 #ifndef CHATBUBBLE_H
 #define CHATBUBBLE_H
 
-#include "iteminfo.h"
-#include <QHBoxLayout>
-#include <QMenu>
-#include <QScrollBar>
 #include <QWidget>
+#include <QPainter>
+#include <QPaintEvent>
+#include <QHBoxLayout>
+#include <QScrollBar>
+#include <QTimer>
+#include <QMenu>
+#include "comapi/unit.h"
 
+
+class ItemInfo;
 class BubbleListPrivate;
-
-/**
- * @brief 聊天气泡列表公开接口类
- * @details 对外提供核心操作接口，管理布局和滚动条，转发私有实现类的信号
- */
 class BubbleList: public QWidget
 {
     Q_OBJECT
@@ -21,14 +21,17 @@ public:
     ~BubbleList();
 
 public:
-    /// 代理私有实现类的公开接口
+    /// proxy public interfaces for PYFlashListPrivate
     void addItem(ItemInfo *item);
     void addItems(QVector<ItemInfo*> items);
 
     void clear();
+
     void render();
 
-    void setCurrItem(const int &index);
+    void setCurrItem(const int &index) {
+        scrollbar->setValue(index);
+    }
 
 protected:
     QSize sizeHint() const
@@ -38,24 +41,25 @@ protected:
 
     void resizeEvent(QResizeEvent *);
 
-private:
-    /// 私有工具函数
-    void initVars(); // 初始化成员变量
-    void initWgts(); // 初始化子控件
-    void initStgs(); // 初始化样式和配置
-    void initConns(); // 初始化信号槽连接
 
-    void calcGeo(); // 计算布局
+private:
+    /// private utility functoins
+    void initVars();
+    void initWgts();
+    void initStgs();
+    void initConns();
+
+    void calcGeo();
 
 private Q_SLOTS:
     void setMaximum(int max);
 
 private:
     QHBoxLayout* mainLayout;
-    QScrollBar* scrollbar;  //滚动条
+    QScrollBar* scrollbar;
     BubbleListPrivate* d;
 
-signals:
+Q_SIGNALS:
     void sig_setCurrentIndex(int currIndex);
     void sig_itemClicked(const QString& str);
     void signalDownloadFile(const QString &fileName);
@@ -66,62 +70,76 @@ class BubbleListPrivate : public QWidget
     Q_OBJECT
 public:
     explicit BubbleListPrivate(QWidget *parent = 0);
-    ~BubbleListPrivate();
 
+public:
+    /// public interfaces
     void addItem(ItemInfo *item);
     void addItems(QVector<ItemInfo*> items);
+
     void clear();
+
     void render();
+
     int itemCount() const
     {
         return m_IIVec.count();
     }
-
-
-public slots:
+public Q_SLOTS:
     void setCurrentIndex(int curIndex);
 
 protected:
     void paintEvent(QPaintEvent *);
+
     void mouseMoveEvent(QMouseEvent *);
+
     void mousePressEvent(QMouseEvent *);
+
     void mouseDoubleClickEvent(QMouseEvent *e);
+
     void resizeEvent(QResizeEvent *);
+
     void leaveEvent(QEvent *);
+
     void showEvent(QShowEvent *);
+
     void wheelEvent(QWheelEvent *);
 
 private:
+    /// painting functions
     void drawBackground(QPainter* painter);
+
     void drawItems(QPainter* painter);
+
     void drawHoverRect(QPainter* painter);
 
+
 private:
+    /// private utility functoins
     void initVars();
     void initSettings();
-    void calcGeo(); //计算高度
-    void wheelUp(); //滚轮向上滚消息
-    void wheelDown();   //滚轮向下滚消息
+    void calcGeo();
+    void wheelUp();
+    void wheelDown();
 
 private:
-    QVector<ItemInfo*> m_IIVec; //存储文本消息
+    // 如果消息内容多了，不方便修改！~
+    QVector<ItemInfo*> m_IIVec;
 
-    int m_currIndex;    //当前滚动到的文本
-    int m_selectedIndex;    //选中的消息项索引
-    int m_VisibleItemCnt;   //可视区的消息数量
-    int m_ItemCounter;  //消息项总数计数器
-    int m_nHoverItemIndex;  //悬浮项的消息索引
+    int m_currIndex;
+    int m_selectedIndex;
+    int m_VisibleItemCnt;
+    int m_ItemCounter;
 
+    bool m_bAllJobsDone;
 
-    QRectF m_HoverRect; //悬浮项的矩形区域
+    QRectF m_HoverRect;
 
-    QString m_strHoverText; //悬浮项的文本内容
+    QString m_strHoverText;
 
-    QFont m_font;   //消息文本绘制字体
+    QFont m_font;
 
-    bool m_bHover;   //鼠标悬浮状态标记
-    bool m_bAllJobsDone;    //初始化完成标记
-
+    bool    m_bHover;
+    int     m_nHoverItemIndex;
 
 private Q_SLOTS:
     void SltFileMenuClicked(QAction *action);
@@ -134,7 +152,5 @@ Q_SIGNALS:
 private:
     QMenu *picRightButtonMenu;
     QMenu *fileRightButtonMenu;
-
 };
-
 #endif // CHATBUBBLE_H

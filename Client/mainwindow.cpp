@@ -493,6 +493,7 @@ void MainWindow::receiveMessage(const QJsonValue &dataVal)
     }
     QJsonObject jsonObj = dataVal.toObject();
     int id = jsonObj.value("id").toInt();   //好友的Id
+    QString msg = jsonObj.value("msg").toString();
 
     foreach(ChatWindow* window, m_chatFriendWindows){
         if(window->getUserId() == id){
@@ -501,8 +502,16 @@ void MainWindow::receiveMessage(const QJsonValue &dataVal)
         }
     }
 
-    //下面写没有开启这个好友聊天窗口时的逻辑
+    //下面写没有开启这个好友聊天窗口时的逻辑（已经包含上线转发）
+    ItemInfo *itemInfo = new ItemInfo(this);
+    itemInfo->SetName(DatabaseMsg::getInstance()->getFriendName(id));
+    itemInfo->SetDatetime(QDateTime::currentDateTime().toString("MM-dd HH:mm"));
+    itemInfo->SetHeadPixmap("");
+    itemInfo->SetText(msg);
+    itemInfo->SetOrientation(Left);
 
+    delete itemInfo;
+    itemInfo = nullptr;
 
 }
 

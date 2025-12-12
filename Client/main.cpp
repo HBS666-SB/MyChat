@@ -5,8 +5,8 @@
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-//    LoginWidget w;
-    ChatWindow w;
+    LoginWidget w;
+//    ChatWindow w;
     w.show();
 
     return a.exec();

@@ -10,6 +10,7 @@
 #include <comapi/myapp.h>
 #include <QKeyEvent>
 #include <QMenu>
+#include "netdb/databasemsg.h"
 
 ChatWindow::ChatWindow(CustomMoveWidget *parent) :
     CustomMoveWidget(parent),
@@ -116,7 +117,7 @@ QString ChatWindow::getUserHead()
     return m_cell->iconPath;
 }
 
-void ChatWindow::AddMessage(const QJsonValue &jsonVal)
+void ChatWindow::AddMessage(const QJsonValue &jsonVal)  //接收消息
 {
     QJsonObject jsonObj = jsonVal.toObject();
     QString msg = jsonObj.value("msg").toString();
@@ -129,6 +130,7 @@ void ChatWindow::AddMessage(const QJsonValue &jsonVal)
     itemInfo->SetOrientation(Left);
 
     ui->widgetBubble->addItem(itemInfo);
+    DatabaseMsg::getInstance()->AddHistoryMsg(m_cell->id, itemInfo);
 }
 
 void ChatWindow::changeEvent(QEvent *event)
@@ -207,6 +209,7 @@ void ChatWindow::on_btnSendMsg_clicked()
 
     ui->widgetBubble->addItem(itemInfo);
     ui->textEditMsg->clear();
+    DatabaseMsg::getInstance()->AddHistoryMsg(m_cell->id, itemInfo);
 
 }
 
@@ -224,3 +227,4 @@ void ChatWindow::on_btnClose_clicked()
     emit signalClose();
     close();
 }
+

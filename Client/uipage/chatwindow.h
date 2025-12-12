@@ -55,6 +55,7 @@ private slots:
     void on_btnSendFile_clicked();
     void on_btnClose_clicked();
 
+
 private:
     Ui::ChatWindow *ui;
 

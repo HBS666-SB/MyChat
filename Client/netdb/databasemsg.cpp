@@ -113,6 +113,27 @@ bool DatabaseMsg::OpenMessageDatabase(const QString &dataName)
     return true;
 }
 
+QString DatabaseMsg::getFriendName(const int &id)
+{
+    QString userName = "";
+    if(id < 0){
+        qDebug() << "获取好友名失败，id < 0";
+        return userName;
+    }
+    QSqlQuery query(userdb);
+    QString sql("SELECT friend_name FROM FRIEND where user_id = :id;");
+    query.prepare(sql);
+    query.bindValue(":id", id);
+    if(!query.exec()){
+        qDebug() << "获取用户名失败" << query.lastError();
+        return userName;
+    }
+    query.next();
+    userName = query.value("friend_name").toString();
+    return  userName;
+
+}
+
 void DatabaseMsg::AddFriend(const int &userId, const QString &friendName, int status)
 {
     bool isFriend = isMyFriend(friendName);
@@ -164,9 +185,29 @@ QJsonValue DatabaseMsg::GetMyFriend()
     return jsonVal;
 }
 
-
-void DatabaseMsg::AddHistoryMsg(const int &userId, const QString &name, const QString &text, const QString &time)
+void DatabaseMsg::AddHistoryMsg(const int &userId, ItemInfo *itemInfo)
 {
+    if(userId < 0){
+        qDebug() << "添加历史消息出错userId < 0" ;
+        return;
+    }
+    QSqlQuery query(msgdb);
+    QString sql;
+    sql = QString("INSERT INTO MSGINFO (user_id, name, head, datetime, filesize, content, type, direction) ");
+    sql.append("VALUES (:user_id, :name, :head, :datetime, :filesize, :content, :type, :direction);");
+    query.prepare(sql);
+    query.bindValue(":user_id", userId);
+    query.bindValue(":name", itemInfo->GetName());
+    query.bindValue(":head", itemInfo->GetStrPixmap());
+    query.bindValue(":datetime", itemInfo->GetDatetime());
+    query.bindValue(":filesize", itemInfo->GetFileSizeString());
+    query.bindValue(":content", itemInfo->GetText());
+    query.bindValue(":type", itemInfo->GetMsgType());
+    query.bindValue(":direction", itemInfo->GetOrientation());
+
+    if(!query.exec()){
+        qDebug() << "插入历史消息出错" << query.lastError();
+    }
 
 }
 
