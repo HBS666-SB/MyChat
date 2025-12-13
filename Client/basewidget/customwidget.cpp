@@ -1,6 +1,5 @@
 #include "customwidget.h"
 
-#include <QMouseEvent>
 #include <QPainter>
 #include <QStyleOption>
 #include <QDebug>

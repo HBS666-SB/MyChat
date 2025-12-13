@@ -6,7 +6,8 @@
 #include <QMutex>
 #include <QTimer>
 #include <QFile>
-
+#include <QMouseEvent>
+#include <QPaintEvent>
 #include <QLineEdit>
 QT_BEGIN_NAMESPACE
 class QPushButton;

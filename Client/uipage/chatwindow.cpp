@@ -11,6 +11,7 @@
 #include <QKeyEvent>
 #include <QMenu>
 #include "netdb/databasemsg.h"
+#include "face/facedialog.h"
 
 ChatWindow::ChatWindow(CustomMoveWidget *parent) :
     CustomMoveWidget(parent),
@@ -260,3 +261,10 @@ void ChatWindow::on_btnWinClose_clicked()
     close();
 }
 
+
+void ChatWindow::on_toolButton_3_clicked()
+{
+    faceDialog *face = new faceDialog;
+    face->show();
+    connect(this, &ChatWindow::signalClose, face, &faceDialog::sltClose);
+}

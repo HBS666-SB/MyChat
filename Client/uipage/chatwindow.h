@@ -58,6 +58,8 @@ private slots:
     void on_btnClose_clicked();
 
 
+    void on_toolButton_3_clicked();
+
 private:
     Ui::ChatWindow *ui;
 
