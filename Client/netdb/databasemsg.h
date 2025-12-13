@@ -40,7 +40,7 @@ public:
 
     // 消息操作
     void AddHistoryMsg(const int &userId, ItemInfo *itemInfo);
-    QVector<QJsonObject> QueryHistory(const int &id, const int &count = 0);
+    QVector<QJsonObject> getHistoryMsg(const int &id, const int &count = 0);
     bool isMyFriend(QString friendName);
     void removeFriend(const QString &friendName);
 

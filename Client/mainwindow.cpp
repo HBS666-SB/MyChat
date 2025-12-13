@@ -349,8 +349,7 @@ void MainWindow::SltFriendChatWindowClose()
         this->show();
     }
     m_chatFriendWindows.removeOne(chatWindow);
-    chatWindow->deleteLater();
-    qDebug() << "m_chatFriendWindows.sizer() = " << m_chatFriendWindows.size();
+//    chatWindow->deleteLater();
 }
 
 void MainWindow::addFriendRequist(const QJsonValue &dataVal)
@@ -494,6 +493,7 @@ void MainWindow::receiveMessage(const QJsonValue &dataVal)
     QJsonObject jsonObj = dataVal.toObject();
     int id = jsonObj.value("id").toInt();   //好友的Id
     QString msg = jsonObj.value("msg").toString();
+    QString head = jsonObj.value("head").toString();
 
     foreach(ChatWindow* window, m_chatFriendWindows){
         if(window->getUserId() == id){
@@ -506,9 +506,11 @@ void MainWindow::receiveMessage(const QJsonValue &dataVal)
     ItemInfo *itemInfo = new ItemInfo(this);
     itemInfo->SetName(DatabaseMsg::getInstance()->getFriendName(id));
     itemInfo->SetDatetime(QDateTime::currentDateTime().toString("MM-dd HH:mm"));
-    itemInfo->SetHeadPixmap("");
+    itemInfo->SetHeadPixmap(MyApp::m_strHeadPath + head);
     itemInfo->SetText(msg);
     itemInfo->SetOrientation(Left);
+    DatabaseMsg::getInstance()->AddHistoryMsg(id, itemInfo);
+
 
     delete itemInfo;
     itemInfo = nullptr;

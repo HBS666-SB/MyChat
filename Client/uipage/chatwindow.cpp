@@ -51,11 +51,18 @@ ChatWindow::ChatWindow(CustomMoveWidget *parent) :
 
     ui->textEditMsg->setFocus();
     ui->textEditMsg->installEventFilter(this);
+
+    count = 0;
+    setAttribute(Qt::WA_DeleteOnClose); //关闭窗口即释放内存
+    connect(ui->widgetBubble,SIGNAL(signalWheelUp()), this, SLOT(sltWheelUp()));
+
 }
+int ChatWindow::count = 0;
 
 ChatWindow::~ChatWindow()
 {
     delete ui;
+
 }
 
 void ChatWindow::setCell(QQCell *cell, const quint8 &type)
@@ -66,6 +73,7 @@ void ChatWindow::setCell(QQCell *cell, const quint8 &type)
     m_cell = cell;
     ui->labelWinTitle->setText(QString("与 %1 聊天中").arg(cell->name));
     this->setWindowTitle(QString("与 %1 聊天中").arg(cell->name));
+    ui->widgetBubble->addItems(getHistoryMsg());
 
     m_nChatType = type;
 
@@ -133,6 +141,30 @@ void ChatWindow::AddMessage(const QJsonValue &jsonVal)  //接收消息
     DatabaseMsg::getInstance()->AddHistoryMsg(m_cell->id, itemInfo);
 }
 
+QVector<ItemInfo *> ChatWindow::getHistoryMsg()
+{
+    QVector<ItemInfo *> itemArr;
+//    name, head, datetime, fizesize, content, type, direction
+    QVector<QJsonObject> vJsonObj = DatabaseMsg::getInstance()->getHistoryMsg(m_cell->id, count++);
+    foreach(QJsonObject obj, vJsonObj){
+        ItemInfo* item = new ItemInfo(this);
+        item->SetName(obj.value("name").toString());
+        item->SetHeadPixmap(obj.value("head").toString());
+        item->SetDatetime(obj.value("datetime").toString());
+        item->SetFileSizeString(obj.value("filesize").toString());
+        item->SetText(obj.value("content").toString());
+        item->SetMsgType(static_cast<quint8>(obj.value("type").toInt()));
+        item->SetOrientation(m_cell->name == obj.value("name").toString() ? Left : Right);
+        itemArr.append(item);
+    }
+    return itemArr;
+}
+
+void ChatWindow::sltWheelUp()
+{
+   ui->widgetBubble->addItems(getHistoryMsg());
+}
+
 void ChatWindow::changeEvent(QEvent *event)
 {
     QWidget::changeEvent(event);
@@ -178,13 +210,6 @@ bool ChatWindow::eventFilter(QObject *watched, QEvent *event)
     return CustomMoveWidget::eventFilter(watched, event);
 }
 
-
-void ChatWindow::on_btnWinClose_clicked()
-{
-    emit signalClose();
-    close();
-}
-
 void ChatWindow::on_btnSendMsg_clicked()
 {
     QString msg = ui->textEditMsg->toPlainText().trimmed();
@@ -223,6 +248,13 @@ void ChatWindow::on_btnSendFile_clicked()
 }
 
 void ChatWindow::on_btnClose_clicked()
+{
+    emit signalClose();
+    close();
+}
+
+
+void ChatWindow::on_btnWinClose_clicked()
 {
     emit signalClose();
     close();

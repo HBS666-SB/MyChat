@@ -27,7 +27,9 @@ public:
     QString getUserName();
     QString getUserHead();
     void AddMessage(const QJsonValue &jsonVal);
-
+    QVector<ItemInfo*> getHistoryMsg();
+public slots:
+    void sltWheelUp();
 
 signals:
     void signalSendMessage(const quint8 &type, const QJsonValue &dataVal);
@@ -69,6 +71,8 @@ private:
 //    quint8 m_nFileType;
     quint8 m_nChatType;        // 聊天类型，群组聊天或私人聊天
      bool m_isEnterSend = true;
+public:
+     static int count;
 
 };
 

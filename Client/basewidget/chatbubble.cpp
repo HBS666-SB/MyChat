@@ -10,6 +10,8 @@
 
 #include "iteminfo.h"
 
+#include <uipage/chatwindow.h>
+
 BubbleList::BubbleList(QWidget *parent) : QWidget(parent)
 {
     initVars();
@@ -58,6 +60,7 @@ void BubbleList::initConns()
     connect(d, SIGNAL(sig_setCurrentIndex(int)), scrollbar, SLOT(setValue(int)));
     connect(d, SIGNAL(sig_itemClicked(QString)), this, SIGNAL(sig_itemClicked(QString)));
     connect(d, SIGNAL(signalDownloadFile(QString)), this, SIGNAL(signalDownloadFile(QString)));
+    connect(d, SIGNAL(signalWheelUp()), this, SIGNAL(signalWheelUp()));
 }
 
 void BubbleList::calcGeo()
@@ -195,6 +198,7 @@ void BubbleListPrivate::wheelUp()
         m_currIndex++;
     } else {
         m_currIndex = m_IIVec.size() - 1;
+        emit signalWheelUp();
     }
     update();
     emit sig_setCurrentIndex(m_currIndex);
@@ -734,9 +738,15 @@ void BubbleListPrivate::addItem(ItemInfo *item)
 
 void BubbleListPrivate::addItems(QVector<ItemInfo *> items)
 {
-    m_IIVec.clear();
-    m_IIVec = items;
-    m_currIndex = 0;
+    if(ChatWindow::count == 0){
+        m_IIVec.clear();
+        m_IIVec = items;
+        m_currIndex = 0;
+    }else {
+        m_IIVec.append(items);
+        m_currIndex += ChatWindow::count;
+    }
+//    qDebug() << m_IIVec.size();
     update();
 }
 

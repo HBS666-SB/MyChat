@@ -34,6 +34,7 @@ public:
     E_STATUS userRegister(const QString &name, const QString &passwd);
     QJsonObject userLogin(const QString &name,const QString &passwd);
     bool isFriend(const int &userId,const QString &friendName);
+    QString getUserHead(const int &userId);
 
     bool haveUser(const QString &name);   //查询用户是否存在
 

@@ -192,8 +192,26 @@ bool DataBaseMag::isFriend(const int &userId, const QString &friendName)
         qDebug() << "判断是否为好友失败";
         return false;
     }
-     return query.next();
+    return query.next();
 
+}
+
+QString DataBaseMag::getUserHead(const int &userId)
+{
+    QSqlQuery query;
+    QString sql = "SELECT head FROM USERINFO WHERE id = :userId;";
+    query.prepare(sql);
+    query.bindValue(":userId", userId);
+    if(!query.exec())
+    {
+        qDebug() << "获取用户头像路径错误" << query.lastError();
+        return "";
+    }
+    if(!query.next()){
+        qDebug() << "没有查询到该用户";
+        return  "";
+    }
+    return query.value("head").toString();
 }
 
 bool DataBaseMag::haveUser(const QString &name)
@@ -294,20 +312,20 @@ QString DataBaseMag::getUsernameFromId(const QString &userId)
 QString DataBaseMag::jsonValueToString(const QJsonValue &jsonVal)
 {
     if (jsonVal.isNull() || jsonVal.isUndefined()) {
-            qWarning() << "QJsonValue为空或未定义，转换失败";
-            return "";
-        }
+        qWarning() << "QJsonValue为空或未定义，转换失败";
+        return "";
+    }
 
-        QJsonDocument jsonDoc;
-        if (jsonVal.isObject()) {
-            jsonDoc = QJsonDocument(jsonVal.toObject());
-        } else if (jsonVal.isArray()) {
-            jsonDoc = QJsonDocument(jsonVal.toArray());
-        } else {
-            jsonDoc = QJsonDocument(QJsonArray{jsonVal});
-        }
+    QJsonDocument jsonDoc;
+    if (jsonVal.isObject()) {
+        jsonDoc = QJsonDocument(jsonVal.toObject());
+    } else if (jsonVal.isArray()) {
+        jsonDoc = QJsonDocument(jsonVal.toArray());
+    } else {
+        jsonDoc = QJsonDocument(QJsonArray{jsonVal});
+    }
 
-        return jsonDoc.toJson(QJsonDocument::Compact);
+    return jsonDoc.toJson(QJsonDocument::Compact);
 }
 
 void DataBaseMag::insertMessageQueue(const int &senderId, const int &acceptId, quint8 type, const QJsonValue &dataVal)

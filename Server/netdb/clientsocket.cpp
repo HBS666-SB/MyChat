@@ -342,6 +342,9 @@ void ClientSocket::ParseSendMsg(const QJsonValue &dataVal)
     QJsonObject resObj;
     resObj.insert("id", m_nId);
     resObj.insert("msg",jsonObj.value("msg"));
+    resObj.insert("head", DataBaseMag::getInstance()->getUserHead(m_nId));
+
+//    qDebug() << "发送的head" <<  DataBaseMag::getInstance()->getUserHead(m_nId) << "\n";
 
     emit signalPrivateMsgToClient(m_nId, jsonObj.value("id").toInt(),SendMsg, QJsonValue(resObj));
 

@@ -63,6 +63,7 @@ Q_SIGNALS:
     void sig_setCurrentIndex(int currIndex);
     void sig_itemClicked(const QString& str);
     void signalDownloadFile(const QString &fileName);
+    void signalWheelUp();
 };
 
 class BubbleListPrivate : public QWidget
@@ -148,6 +149,7 @@ Q_SIGNALS:
     void sig_setCurrentIndex(int currIndex);
     void sig_itemClicked(const QString& str);
     void signalDownloadFile(const QString &fileName);
+    void signalWheelUp();
 
 private:
     QMenu *picRightButtonMenu;
