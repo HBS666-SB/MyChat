@@ -464,7 +464,7 @@ void BubbleListPrivate::drawItems(QPainter *painter)
         QString strMsg = m_IIVec.at(nIndex)->GetText();
         quint8 msgType = m_IIVec.at(nIndex)->GetMsgType();
         int faceIndex = m_IIVec.at(nIndex)->getFace();
-//        qDebug() << "faceIndex = " << faceIndex;
+        //        qDebug() << "faceIndex = " << faceIndex;
         quint8 nOrientation = m_IIVec.at(nIndex)->GetOrientation();
         QString strPixmap = m_IIVec.at(nIndex)->GetStrPixmap();
 
@@ -549,10 +549,8 @@ void BubbleListPrivate::drawItems(QPainter *painter)
                 QString facePath = QString(":/resource/face/%1.gif").arg(faceIndex + 1);
                 pixmap = QPixmap(facePath);
             }
-
             bubbleWidth = pixmap.width();
             bubbleHeight = pixmap.height() + 10;
-
             // 文字初始化高度
             nY = this->height() - nItemY - bubbleHeight;
 

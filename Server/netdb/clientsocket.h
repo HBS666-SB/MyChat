@@ -64,6 +64,7 @@ private:
     void ParseFaceMessages(const QByteArray &reply);
 
     void ParseSendMsg(const QJsonValue &dataVal);   //发送信息
+    void ParseSendFace(const QJsonValue &dataVal);  //发送表情
 };
 
 /*

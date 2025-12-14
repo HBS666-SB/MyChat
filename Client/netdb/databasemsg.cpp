@@ -201,14 +201,18 @@ void DatabaseMsg::AddHistoryMsg(const int &userId, ItemInfo *itemInfo)
     query.bindValue(":head", itemInfo->GetStrPixmap());
     query.bindValue(":datetime", itemInfo->GetDatetime());
     query.bindValue(":filesize", itemInfo->GetFileSizeString());
-    query.bindValue(":content", itemInfo->GetText());
-    query.bindValue(":type", itemInfo->GetMsgType());
+    if(itemInfo->GetMsgType() == Text){
+        query.bindValue(":content", itemInfo->GetText());
+    }else if(itemInfo->GetMsgType() == Face){
+        query.bindValue(":content", QString::number(itemInfo->getFace()));
+    }
+    query.bindValue(":type",static_cast<int>(itemInfo->GetMsgType()));
     query.bindValue(":direction", itemInfo->GetOrientation());
 
     if(!query.exec()){
         qDebug() << "插入历史消息出错" << query.lastError();
     }
-
+    qDebug() << "插入到数据库消息：" << "content" << itemInfo->getFace() << "type" << itemInfo->GetMsgType();
 }
 
 QVector<QJsonObject> DatabaseMsg::getHistoryMsg(const int &id, const int &count)

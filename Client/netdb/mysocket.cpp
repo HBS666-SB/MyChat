@@ -193,6 +193,11 @@ void MySocket::sendMsgType(const quint8 &nType, const QJsonValue &dataVal)
         emit signalStatus(SendMsg, dataVal);
         break;
     }
+    case SendFace:
+    {
+        emit signalStatus(SendFace, dataVal);
+        break;
+    }
 
     }
 }

@@ -136,3 +136,8 @@ void MainWindow::on_btnUserRefresh_clicked()    //显示所有用户
 
     ui->tableViewUsers->verticalHeader()->setVisible(false); // 隐藏行号
 }
+
+void MainWindow::on_btnWinMin_clicked()
+{
+//    this->hide();
+}

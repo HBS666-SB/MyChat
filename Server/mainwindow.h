@@ -32,6 +32,8 @@ private slots:
 
     void on_btnUserRefresh_clicked();
 
+    void on_btnWinMin_clicked();
+
 private:
     Ui::MainWindow *ui;
 

@@ -130,12 +130,19 @@ void ChatWindow::AddMessage(const QJsonValue &jsonVal)  //接收消息
 {
     QJsonObject jsonObj = jsonVal.toObject();
     QString msg = jsonObj.value("msg").toString();
+    int type = jsonObj.value("type").toInt();
 
     ItemInfo *itemInfo = new ItemInfo(this);
     itemInfo->SetName(m_cell->name);
     itemInfo->SetDatetime(QDateTime::currentDateTime().toString("MM-dd HH:mm"));
     itemInfo->SetHeadPixmap(m_cell->iconPath);
-    itemInfo->SetText(msg);
+    if(Text == static_cast<quint8>(type)){
+        itemInfo->SetText(msg);
+    }else if(Face == static_cast<quint8>(type)){
+        itemInfo->SetFace(msg.toInt());
+    }
+    qDebug() << "AddMessage【chatwindow144】" << "type" << type << "msg" << msg;
+    itemInfo->SetMsgType(static_cast<quint8>(type));
     itemInfo->SetOrientation(Left);
 
     ui->widgetBubble->addItem(itemInfo);
@@ -153,8 +160,12 @@ QVector<ItemInfo *> ChatWindow::getHistoryMsg()
         item->SetHeadPixmap(obj.value("head").toString());
         item->SetDatetime(obj.value("datetime").toString());
         item->SetFileSizeString(obj.value("filesize").toString());
-        item->SetText(obj.value("content").toString());
         item->SetMsgType(static_cast<quint8>(obj.value("type").toInt()));
+        if(item->GetMsgType() == Text){
+            item->SetText(obj.value("content").toString());
+        }else if(item->GetMsgType() == Face){
+            item->SetFace(obj.value("content").toString().toInt());
+        }
         item->SetOrientation(m_cell->name == obj.value("name").toString() ? Left : Right);
         itemArr.append(item);
     }

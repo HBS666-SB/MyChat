@@ -333,6 +333,12 @@ void MainWindow::sltStatus(const quint8 &status, const QJsonValue &dataVal)
     case SendMsg:
     {
         receiveMessage(dataVal);
+        break;
+    }
+    case SendFace:
+    {
+        receiveMessage(dataVal);
+        break;
     }
     }
 }
@@ -490,11 +496,13 @@ void MainWindow::receiveMessage(const QJsonValue &dataVal)
         qDebug() << "消息解析失败";
         return;
     }
+
     QJsonObject jsonObj = dataVal.toObject();
     int id = jsonObj.value("id").toInt();   //好友的Id
     QString msg = jsonObj.value("msg").toString();
     QString head = jsonObj.value("head").toString();
-
+    int type = jsonObj.value("type").toInt();
+    qDebug() << "msg" << msg << "type" << type;
     foreach(ChatWindow* window, m_chatFriendWindows){
         if(window->getUserId() == id){
             window->AddMessage(dataVal);
@@ -507,7 +515,13 @@ void MainWindow::receiveMessage(const QJsonValue &dataVal)
     itemInfo->SetName(DatabaseMsg::getInstance()->getFriendName(id));
     itemInfo->SetDatetime(QDateTime::currentDateTime().toString("MM-dd HH:mm"));
     itemInfo->SetHeadPixmap(MyApp::m_strHeadPath + head);
-    itemInfo->SetText(msg);
+    itemInfo->SetMsgType(static_cast<quint8>(type));
+    if(static_cast<quint8>(type) == Text){
+        itemInfo->SetText(msg);
+    }else if(static_cast<quint8>(type) == Face){
+        itemInfo->SetFace(msg.toInt());
+    }
+    itemInfo->SetMsgType(static_cast<quint8>(type));
     itemInfo->SetOrientation(Left);
     DatabaseMsg::getInstance()->AddHistoryMsg(id, itemInfo);
 
