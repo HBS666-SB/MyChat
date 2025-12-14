@@ -32,6 +32,9 @@ public:
     void SetText(const QString& text);
     QString GetText() const;
 
+    void SetFace(const int index);
+    int getFace() const;
+
     void SetFileSizeString(const QString& strSize);
     QString GetFileSizeString() const;
 
@@ -54,6 +57,8 @@ private:
     QString     m_strDatetime;
     // 头像图片
     QString     m_strPixmap;
+    //表情序号
+    int         m_faceIndex;
     // 消息内容
     QString     m_strText;
     // 如果是文件，会显示文件大小

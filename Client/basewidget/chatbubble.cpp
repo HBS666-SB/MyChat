@@ -463,7 +463,8 @@ void BubbleListPrivate::drawItems(QPainter *painter)
         // 解析消息内容
         QString strMsg = m_IIVec.at(nIndex)->GetText();
         quint8 msgType = m_IIVec.at(nIndex)->GetMsgType();
-
+        int faceIndex = m_IIVec.at(nIndex)->getFace();
+//        qDebug() << "faceIndex = " << faceIndex;
         quint8 nOrientation = m_IIVec.at(nIndex)->GetOrientation();
         QString strPixmap = m_IIVec.at(nIndex)->GetStrPixmap();
 
@@ -540,6 +541,23 @@ void BubbleListPrivate::drawItems(QPainter *painter)
             nY = this->height() - nItemY - bubbleHeight;
         }
             break;
+        case  Face:
+        {
+            pixmap = QPixmap(strMsg);
+            if (pixmap.isNull())
+            {
+                QString facePath = QString(":/resource/face/%1.gif").arg(faceIndex + 1);
+                pixmap = QPixmap(facePath);
+            }
+
+            bubbleWidth = pixmap.width();
+            bubbleHeight = pixmap.height() + 10;
+
+            // 文字初始化高度
+            nY = this->height() - nItemY - bubbleHeight;
+
+            break;
+        }
         case Files:
         {
             QFileInfo fileInfo(strMsg);
@@ -707,6 +725,10 @@ void BubbleListPrivate::drawItems(QPainter *painter)
         {
             painter->drawPixmap(nX + 10, nY + 5, pixmap.width(), pixmap.height(), pixmap);
         }
+        else if (Face == msgType)
+        {
+            painter->drawPixmap(nX + 10, nY + 5, pixmap.width(), pixmap.height(), pixmap);
+        }
         else if (Files == msgType)
         {
             painter->drawPixmap(nX + 10, nY + 5 + (48 - pixmap.height()) / 2, pixmap.width(), pixmap.height(), pixmap);
@@ -746,7 +768,7 @@ void BubbleListPrivate::addItems(QVector<ItemInfo *> items)
         m_IIVec.append(items);
         m_currIndex += ChatWindow::count;
     }
-//    qDebug() << m_IIVec.size();
+    //    qDebug() << m_IIVec.size();
     update();
 }
 

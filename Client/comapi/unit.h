@@ -106,6 +106,7 @@ typedef enum {
     Audio,          // 语音消息
     Picture,        // 图片消息
     Files,          // 文件传输
+    Face,           //动画表情
 } MessageType;
 
 

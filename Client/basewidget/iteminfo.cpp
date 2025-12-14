@@ -70,6 +70,16 @@ QString ItemInfo::GetText() const
     return m_strText;
 }
 
+void ItemInfo::SetFace(const int index)
+{
+    m_faceIndex = index;
+}
+
+int ItemInfo::getFace() const
+{
+    return  m_faceIndex;
+}
+
 void ItemInfo::SetFileSizeString(const QString &strSize)
 {
     m_strSize = strSize;

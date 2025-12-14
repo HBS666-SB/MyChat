@@ -15,9 +15,16 @@ class faceDialog : public CustomMoveWidget
 public:
     explicit faceDialog(QWidget *parent = nullptr);
     ~faceDialog();
+    int getSelectFaceIndex();
+
+protected:
+    bool eventFilter(QObject *watched, QEvent *event) override;
 
 private slots:
     void on_pushButton_clicked();
+
+signals:
+    void signalSelectFaceIndex(int index);
 
 private:
     Ui::faceDialog *ui;
@@ -26,6 +33,10 @@ private:
     void addEmojiItem(QString fileName);
 public slots:
     void sltClose();
+
+
+public:
+    int m_selectFaceIndex;
 
 };
 

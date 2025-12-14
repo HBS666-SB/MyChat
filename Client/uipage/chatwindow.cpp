@@ -163,7 +163,30 @@ QVector<ItemInfo *> ChatWindow::getHistoryMsg()
 
 void ChatWindow::sltWheelUp()
 {
-   ui->widgetBubble->addItems(getHistoryMsg());
+    ui->widgetBubble->addItems(getHistoryMsg());
+}
+
+void ChatWindow::sendFaceMsg(int index)
+{
+    QJsonObject jsonObj;
+    jsonObj.insert("id", getUserId());
+    jsonObj.insert("msg",index);
+    jsonObj.insert("type", Face);
+    qDebug() << "发送信号";
+    emit signalSendMessage(SendFace, QJsonValue(jsonObj));
+
+    ItemInfo *itemInfo = new ItemInfo(this);
+    itemInfo->SetName(MyApp::m_strUserName);
+    itemInfo->SetDatetime(QDateTime::currentDateTime().toString("MM-dd HH:mm"));
+    itemInfo->SetHeadPixmap(MyApp::m_strHeadPath + MyApp::m_strHeadFile);
+    itemInfo->SetFace(index);
+    itemInfo->SetOrientation(Right);
+    itemInfo->SetText(QString::number(index + 1));
+    itemInfo->SetMsgType(Face);
+
+    ui->widgetBubble->addItem(itemInfo);
+    ui->textEditMsg->clear();
+    DatabaseMsg::getInstance()->AddHistoryMsg(m_cell->id, itemInfo);
 }
 
 void ChatWindow::changeEvent(QEvent *event)
@@ -267,4 +290,6 @@ void ChatWindow::on_toolButton_3_clicked()
     faceDialog *face = new faceDialog;
     face->show();
     connect(this, &ChatWindow::signalClose, face, &faceDialog::sltClose);
+    connect(face, &faceDialog::signalSelectFaceIndex, this, &ChatWindow::sendFaceMsg);
+
 }

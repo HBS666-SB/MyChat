@@ -9,6 +9,8 @@
 
 #include <basewidget/chatbubble.h>
 
+#include <uipage/face/emojiitem.h>
+
 namespace Ui {
 class ChatWindow;
 }
@@ -30,6 +32,7 @@ public:
     QVector<ItemInfo*> getHistoryMsg();
 public slots:
     void sltWheelUp();
+    void sendFaceMsg(int index);
 
 signals:
     void signalSendMessage(const quint8 &type, const QJsonValue &dataVal);
