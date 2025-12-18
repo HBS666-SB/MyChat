@@ -289,6 +289,7 @@ void MainWindow::SltFriendsClicked(QQCell *cell)
         if(window->getUserId() == cell->id){
             qDebug() << cell->id;
             window->show();
+            window->raise();    //置于最顶层
             return;
         }
     }

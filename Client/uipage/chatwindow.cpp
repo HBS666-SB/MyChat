@@ -5,11 +5,15 @@
 #include <QJsonObject>
 #include <QToolTip>
 #include <QDateTime>
+#include <QFileDialog>
+#include <QIODevice>
+#include <qthread.h>
 #include "comapi/unit.h"
 #include <basewidget/iteminfo.h>
 #include <comapi/myapp.h>
 #include <QKeyEvent>
 #include <QMenu>
+#include <netdb/filesocket.h>
 #include "netdb/databasemsg.h"
 #include "face/facedialog.h"
 
@@ -152,7 +156,7 @@ void ChatWindow::AddMessage(const QJsonValue &jsonVal)  //接收消息
 QVector<ItemInfo *> ChatWindow::getHistoryMsg()
 {
     QVector<ItemInfo *> itemArr;
-//    name, head, datetime, fizesize, content, type, direction
+    //    name, head, datetime, fizesize, content, type, direction
     QVector<QJsonObject> vJsonObj = DatabaseMsg::getInstance()->getHistoryMsg(m_cell->id, count++);
     foreach(QJsonObject obj, vJsonObj){
         ItemInfo* item = new ItemInfo(this);
@@ -275,11 +279,68 @@ void ChatWindow::on_btnSendMsg_clicked()
 
 void ChatWindow::on_btnSendFile_clicked()
 {
-    if(ui->widgetFileBoard->isHidden()){
-        ui->widgetFileBoard->show();
+    // 选择文件
+    QFileDialog fileDialog(this);
+    fileDialog.setWindowTitle("选择要上传的文件");
+    fileDialog.setDirectory("C:\\");
+    fileDialog.setNameFilter("*.*");
+    fileDialog.setFileMode(QFileDialog::ExistingFile);
+    fileDialog.setViewMode(QFileDialog::Detail);
+
+    QString fileName = fileDialog.getOpenFileName();
+    if (fileName.isEmpty()) {
+        qDebug() << "未选择文件";
         return;
     }
-    ui->widgetFileBoard->hide();
+    qDebug() << "选择文件：" << fileName;
+    ui->widgetFileBoard->show();
+
+    // 创建子线程和FileSocket（确保Socket与FileSocket同线程）
+    QThread *fileSendThread = new QThread(this);
+    FileSocket *work = new FileSocket();
+    work->moveToThread(fileSendThread); // FileSocket移到子线程，Socket也随之绑定
+    // 设置文件路径和分片大小
+    work->setFilePath(fileName);
+    work->setLoadSize(4*1024); // 4KB分片
+
+    //主线程 → 子线程（触发连接/发送/停止）
+    connect(this, &ChatWindow::signalConnectFileServer, work, &FileSocket::connectToFileServer);
+    connect(this, &ChatWindow::signalStartSend, work, &FileSocket::startSendFile);
+    connect(this, &ChatWindow::signalStopSend, work, &FileSocket::stopSendFile);
+
+    //子线程 → 主线程
+    connect(work, &FileSocket::progressUpdated, this, [=](quint64 sent, quint64 total) {
+        ui->progressBar->setMaximum(static_cast<int>(total));
+        ui->progressBar->setValue(static_cast<int>(sent));
+    });
+    connect(work, &FileSocket::sendFinished, this, [=]() {
+        qDebug() << "文件发送完成";
+        ui->widgetFileBoard->hide();
+        fileSendThread->quit(); // 发送完成后退出线程
+        fileSendThread->wait();
+        fileSendThread->deleteLater();
+        work->deleteLater();
+    });
+    connect(work, &FileSocket::sendFailed, this, [=](const QString &error) {
+        qDebug() << "发送失败：" << error;
+        ui->widgetFileBoard->hide();
+        fileSendThread->quit();
+        fileSendThread->wait();
+        fileSendThread->deleteLater();
+        work->deleteLater();
+    });
+    //连接成功后触发发送
+    connect(work, &FileSocket::fileServerConnected, this, &ChatWindow::signalStartSend);
+
+    // 线程结束清理
+    connect(fileSendThread, &QThread::finished, work, &FileSocket::deleteLater);
+    connect(fileSendThread, &QThread::finished, fileSendThread, &QThread::deleteLater);
+
+    // 启动线程 → 连接服务器 → 自动触发发送
+    fileSendThread->start();
+    emit signalConnectFileServer(MyApp::m_strHostAddr, MyApp::m_nFilePort);
+
+//    qDebug() << "主线程ID：" << QThread::currentThreadId() << "子线程ID：" << fileSendThread;
 }
 
 void ChatWindow::on_btnClose_clicked()

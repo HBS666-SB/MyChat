@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <netdb/myserver.h>
 #include "basewidget/customwidget.h"
 
 class TcpMsgServer;
@@ -39,6 +40,7 @@ private:
 
     QButtonGroup *m_buttonGroup;
     TcpMsgServer *m_tcpServer;
+    TcpFileServer *m_tcpFileServer;
 };
 
 #endif // MAINWINDOW_H

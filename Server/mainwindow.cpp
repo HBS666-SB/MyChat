@@ -32,6 +32,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     m_tcpServer = new TcpMsgServer(this);
     m_tcpServer->StartListen(60101);
+    m_tcpFileServer = new TcpFileServer(this);
+    m_tcpFileServer->StartListen(60102);
     ui->labelHostAddr->setText("本机IP：" + myHelper::GetIP());
     DataBaseMag::getInstance()->openDatabase(QString("%1server.db").arg(MyApp::m_strDatabasePath)); //打开数据库
 

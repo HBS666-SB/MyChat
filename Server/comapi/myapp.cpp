@@ -28,7 +28,6 @@ QString MyApp::m_strPassword        = "111";
 
 int     MyApp::m_nId                = -1;
 int     MyApp::m_nIdentyfi          = -1;
-
 // 初始化
 void MyApp::InitApp(const QString &appPath)
 {

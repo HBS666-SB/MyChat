@@ -1,6 +1,7 @@
 #ifndef MYSOCKET_H
 #define MYSOCKET_H
 
+#include <QFile>
 #include <QTcpSocket>
 
 class MySocket : public QObject
@@ -38,6 +39,5 @@ private:
     QByteArray m_recvBuffer;    //缓存未处理的字节
     int m_nId;
 };
-
 
 #endif // MYSOCKET_H

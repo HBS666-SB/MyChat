@@ -4,6 +4,7 @@
 #include "basewidget/customwidget.h"
 #include <QStandardItemModel>
 
+#include <QTcpSocket>
 #include <QTime>
 #include <qqcell.h>
 
@@ -37,6 +38,9 @@ public slots:
 signals:
     void signalSendMessage(const quint8 &type, const QJsonValue &dataVal);
     void signalClose();
+    void signalStartSend();
+    void signalStopSend();
+    void signalConnectFileServer(const QString &host, quint16 port);
 
 protected:
     void changeEvent(QEvent *event) override;

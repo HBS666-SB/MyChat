@@ -212,7 +212,7 @@ void DatabaseMsg::AddHistoryMsg(const int &userId, ItemInfo *itemInfo)
     if(!query.exec()){
         qDebug() << "插入历史消息出错" << query.lastError();
     }
-    qDebug() << "插入到数据库消息：" << "content" << itemInfo->getFace() << "type" << itemInfo->GetMsgType();
+//    qDebug() << "插入到数据库消息：" << "content" << itemInfo->getFace() << "type" << itemInfo->GetMsgType();
 }
 
 QVector<QJsonObject> DatabaseMsg::getHistoryMsg(const int &id, const int &count)
