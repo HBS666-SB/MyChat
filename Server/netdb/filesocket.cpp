@@ -5,6 +5,8 @@
 #include <QHostAddress>
 #include <QThread>
 #include "comapi/myapp.h"
+#include <QJsonDocument>
+#include <QJsonObject>
 
 FileSocket::FileSocket(QTcpSocket *socket, QObject *parent)
     : QObject(parent), QRunnable()
@@ -46,7 +48,7 @@ void FileSocket::setTcpSocket(QTcpSocket *socket)
     {
         // 不在这里设置父对象或连接信号，避免跨线程问题。
         // socket 与本对象将在 run() 中移动到工作线程后再建立连接和设置选项。
-        // 生成客户端唯一标识（尽量在主线程也可获得地址/端口）
+        // 生成客户端唯一标识
         m_clientKey = QString("%1:%2")
                           .arg(m_tcpSocket->peerAddress().toString())
                           .arg(m_tcpSocket->peerPort());
@@ -75,9 +77,9 @@ void FileSocket::run()
     m_isRunning = true;
     // 运行于线程池线程 —— 确保在该线程内创建或绑定 QTcpSocket，避免 QSocketNotifier 在主线程创建
     QThread *workerThread = QThread::currentThread();
-    this->moveToThread(workerThread);
+    // 不要将 this 对象再次移动到线程（可能已在其他线程），仅确保底层 socket 在当前工作线程中
 
-    // 如果用户在 incomingConnection 中传入了 socket 描述符，延迟在这里创建 QTcpSocket（在工作线程）
+    // 如果用户在 incomingConnection 中传入了 socket 描述符，延迟在这里创建 QTcpSocket
     if (!m_tcpSocket && m_socketDescriptor >= 0)
     {
         m_tcpSocket = new QTcpSocket();
@@ -100,6 +102,20 @@ void FileSocket::run()
         return;
     }
 
+    // 如果 socket 是在其他线程创建的，移动它到当前工作线程以便后续使用
+    if (m_tcpSocket->thread() != workerThread)
+    {
+        // 仅当 socket 没有父对象或其父对象也位于目标线程时，才移动它
+        if (m_tcpSocket->parent() == nullptr || m_tcpSocket->parent()->thread() == workerThread)
+        {
+            m_tcpSocket->moveToThread(workerThread);
+        }
+        else
+        {
+            qDebug() << "Warning: socket has parent in another thread; skipping moveToThread";
+        }
+    }
+
     // 检查 socket 是否已连接
     if (m_tcpSocket->state() != QAbstractSocket::ConnectedState)
     {
@@ -107,13 +123,13 @@ void FileSocket::run()
         return;
     }
 
-    // 在工作线程中建立直接连接（同线程）
+    // 在工作线程中建立直接连接
     connect(m_tcpSocket, &QTcpSocket::readyRead, this, &FileSocket::onReadyRead, Qt::DirectConnection);
     connect(m_tcpSocket, &QTcpSocket::disconnected, this, &FileSocket::onSocketDisconnected, Qt::DirectConnection);
     connect(m_tcpSocket, QOverload<QAbstractSocket::SocketError>::of(&QTcpSocket::error),
             this, &FileSocket::onSocketError, Qt::DirectConnection);
 
-    // 设置 Socket 参数（在工作线程设置更安全）
+    // 设置 Socket 参数
     m_tcpSocket->setSocketOption(QAbstractSocket::LowDelayOption, 1);
     m_tcpSocket->setSocketOption(QAbstractSocket::ReceiveBufferSizeSocketOption, 4 * 1024);
 
@@ -199,6 +215,89 @@ void FileSocket::onReadyRead()
     if (m_dataBuffer.isEmpty())
         return;
 
+    // 尝试识别是否为下载请求（JSON），例如: {"action":"getfile","file":"name"}
+    if (m_totalBytes == 0 && m_dataBuffer.size() < 4096 && m_dataBuffer.startsWith('{'))
+    {
+        QJsonParseError err;
+        QJsonDocument doc = QJsonDocument::fromJson(m_dataBuffer, &err);
+        if (!doc.isNull() && err.error == QJsonParseError::NoError && doc.isObject())
+        {
+            QJsonObject obj = doc.object();
+            if (obj.value("action").toString() == QLatin1String("getfile"))
+            {
+                QString reqFile = obj.value("file").toString();
+                if (reqFile.isEmpty())
+                {
+                    emit taskFailed(m_clientKey, "下载请求未包含文件名");
+                    return;
+                }
+
+                QString fullPath = QDir(m_saveDir).filePath(reqFile);
+                if (!QFile::exists(fullPath))
+                {
+                    emit taskFailed(m_clientKey, QString("请求文件不存在：%1").arg(fullPath));
+                    return;
+                }
+
+                QFile sendFile(fullPath);
+                if (!sendFile.open(QFile::ReadOnly))
+                {
+                    emit taskFailed(m_clientKey, QString("打开文件失败：%1").arg(sendFile.errorString()));
+                    return;
+                }
+
+                // 构造并发送包头 + 文件数据（同步写入）
+                QByteArray outBlock;
+                QDataStream sendOut(&outBlock, QIODevice::WriteOnly);
+                sendOut.setVersion(QDataStream::Qt_5_12);
+                QByteArray nameUtf8 = reqFile.toUtf8();
+                // 写两个 qint64 占位，然后 append 原始 UTF-8 文件名字节
+                sendOut << qint64(0) << qint64(0);
+                outBlock.append(nameUtf8);
+                qint64 headerSize = outBlock.size();
+                qint64 total = headerSize + sendFile.size();
+                sendOut.device()->seek(0);
+                sendOut << total;
+                sendOut << qint64(nameUtf8.size());
+
+                qint64 written = m_tcpSocket->write(outBlock);
+                if (written == -1)
+                {
+                    emit taskFailed(m_clientKey, "发送文件头失败");
+                    sendFile.close();
+                    return;
+                }
+
+                // 发送文件内容 分片发送，避免一次性占用过多内存
+                const qint64 chunk = 4 * 1024;
+                while (!sendFile.atEnd())
+                {
+                    QByteArray chunkData = sendFile.read(chunk);
+                    if (chunkData.isEmpty())
+                        break;
+                    qint64 w = m_tcpSocket->write(chunkData);
+                    if (w < 0)
+                    {
+                        emit taskFailed(m_clientKey, "发送文件内容失败");
+                        sendFile.close();
+                        return;
+                    }
+                    if (!m_tcpSocket->waitForBytesWritten(30000))
+                    {
+                        emit taskFailed(m_clientKey, "发送超时或连接中断");
+                        sendFile.close();
+                        return;
+                    }
+                }
+
+                sendFile.close();
+                emit recvFinished(m_clientKey, fullPath);
+                return;
+            }
+        }
+        // 如果不是 JSON 请求，继续按文件接收协议处理
+    }
+
     QDataStream in(&m_dataBuffer, QIODevice::ReadOnly);
     in.setVersion(QDataStream::Qt_5_12);
 
@@ -215,7 +314,7 @@ void FileSocket::onReadyRead()
         // 解析总字节数和文件名长度
         in >> m_totalBytes; // 客户端发送的总字节数（
         qint64 fileNameLen = 0;
-        in >> fileNameLen; // 文件名长度
+        in >> fileNameLen; // 文件名长度（按 UTF-8 字节数）
 
         // 检查文件名是否完整
         if (m_dataBuffer.size() < sizeof(qint64) * 2 + fileNameLen)
@@ -224,9 +323,9 @@ void FileSocket::onReadyRead()
             return;
         }
 
-        // 解析文件名
-        QString fileName;
-        in >> fileName;
+        // 解析文件名（读取原始 UTF-8 字节）
+        QByteArray nameBytes = m_dataBuffer.mid(static_cast<int>(sizeof(qint64) * 2), static_cast<int>(fileNameLen));
+        QString fileName = QString::fromUtf8(nameBytes);
         if (fileName.isEmpty())
         {
             emit taskFailed(m_clientKey, "解析到空文件名，终止接收");
@@ -315,7 +414,6 @@ void FileSocket::onReadyRead()
     }
 }
 
-// ========== Socket事件处理 ==========
 void FileSocket::onSocketDisconnected()
 {
     qDebug() << "客户端断开连接：" << m_clientKey;

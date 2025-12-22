@@ -78,6 +78,11 @@ void ClientSocket::sendMsgType(const quint8 &nType, const QJsonValue &dataVal)
         ParseSendFace(dataVal);
         break;
     }
+    case SendFile:
+    {
+        ParseSendFile(dataVal);
+        break;
+    }
     }
 }
 
@@ -368,4 +373,21 @@ void ClientSocket::ParseSendFace(const QJsonValue &dataVal)
     resObj.insert("head", DataBaseMag::getInstance()->getUserHead(m_nId));
     resObj.insert("type", jsonObj.value("type").toInt());
     emit signalPrivateMsgToClient(m_nId, jsonObj.value("id").toInt(),SendFace, QJsonValue(resObj));
+}
+
+void ClientSocket::ParseSendFile(const QJsonValue &dataVal)
+{
+    if(!dataVal.isObject()) {
+        qDebug() << "转发文件出错，客户端传输来的不是JsonObj";
+        return;
+    }
+    QJsonObject jsonObj = dataVal.toObject();
+    QJsonObject resObj;
+    resObj.insert("id", jsonObj.value("id").toInt());
+    resObj.insert("msg", jsonObj.value("msg").toString());
+    resObj.insert("head", DataBaseMag::getInstance()->getUserHead(m_nId));
+    resObj.insert("size", jsonObj.value("size").toString());
+    resObj.insert("type", jsonObj.value("type").toInt());
+
+    emit signalPrivateMsgToClient(m_nId, jsonObj.value("to").toInt(), SendFile, QJsonValue(resObj));
 }

@@ -341,6 +341,11 @@ void MainWindow::sltStatus(const quint8 &status, const QJsonValue &dataVal)
         receiveMessage(dataVal);
         break;
     }
+    case SendFile:
+    {
+        receiveMessage(dataVal);
+        break;
+    }
     }
 }
 
@@ -521,6 +526,9 @@ void MainWindow::receiveMessage(const QJsonValue &dataVal)
         itemInfo->SetText(msg);
     }else if(static_cast<quint8>(type) == Face){
         itemInfo->SetFace(msg.toInt());
+    }else if(static_cast<quint8>(type) == Files){
+        itemInfo->SetText(msg);
+        itemInfo->SetFileSizeString(jsonObj.value("size").toString());
     }
     itemInfo->SetMsgType(static_cast<quint8>(type));
     itemInfo->SetOrientation(Left);

@@ -12,8 +12,11 @@
 
 #include <uipage/face/emojiitem.h>
 
-namespace Ui {
-class ChatWindow;
+#include <netdb/filesocket.h>
+
+namespace Ui
+{
+    class ChatWindow;
 }
 
 class ChatWindow : public CustomMoveWidget
@@ -25,15 +28,16 @@ public:
     ~ChatWindow();
 
     void setCell(QQCell *cell, const quint8 &type = 0);
-//    QString getAddr() const;
+    //    QString getAddr() const;
     int getUserId();
     QString getUserName();
     QString getUserHead();
     void AddMessage(const QJsonValue &jsonVal);
-    QVector<ItemInfo*> getHistoryMsg();
+    QVector<ItemInfo *> getHistoryMsg();
 public slots:
     void sltWheelUp();
     void sendFaceMsg(int index);
+    void sltDownloadFile(const QString &fileName);
 
 signals:
     void signalSendMessage(const quint8 &type, const QJsonValue &dataVal);
@@ -48,22 +52,20 @@ protected:
     bool eventFilter(QObject *watched, QEvent *event) override;
 
 private:
-//    QString GetHeadPixmap(const QString &name) const;
+    //    QString GetHeadPixmap(const QString &name) const;
 
 private slots:
     // 文件
-//    void SltFileRecvFinished(const quint8 &type, const QString &filePath);
-//    void SltUpdateProgress(quint64 bytes, quint64 total);
-//    void SltDownloadFiles(const QString &fileName);
+    //    void SltFileRecvFinished(const quint8 &type, const QString &filePath);
+    //    void SltUpdateProgress(quint64 bytes, quint64 total);
+    //    void SltDownloadFiles(const QString &fileName);
 
     void on_btnWinClose_clicked();
 
     void on_btnSendMsg_clicked();
 
-
     void on_btnSendFile_clicked();
     void on_btnClose_clicked();
-
 
     void on_toolButton_3_clicked();
 
@@ -73,16 +75,16 @@ private:
     QQCell *m_cell = nullptr;
     QStandardItemModel *m_model = nullptr;
 
-//    ClientFileSocket *m_tcpFileSocket; //文件传输
-//    QString m_strFileName;
-//    QTime m_updateTime;
+    //    FileSocket *m_tcpFileSocket; //文件传输
+    //    QString m_strFileName;
+    //    QTime m_updateTime;
 
-//    quint8 m_nFileType;
-    quint8 m_nChatType;        // 聊天类型，群组聊天或私人聊天
-     bool m_isEnterSend = true;
+    //    quint8 m_nFileType;
+    quint8 m_nChatType; // 聊天类型，群组聊天或私人聊天
+    bool m_isEnterSend = true;
+
 public:
-     static int count;
-
+    static int count;
 };
 
 #endif // CHATWINDOW_H

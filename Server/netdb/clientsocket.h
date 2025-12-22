@@ -65,6 +65,7 @@ private:
 
     void ParseSendMsg(const QJsonValue &dataVal);   //发送信息
     void ParseSendFace(const QJsonValue &dataVal);  //发送表情
+    void ParseSendFile(const QJsonValue &dataVal);
 };
 
 

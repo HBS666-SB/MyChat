@@ -94,6 +94,8 @@
 #define ITEM_SPACE          20
 #define ITEM_TITLE_HEIGHT   20
 
+#define  DATE_TIME QDateTime::currentDateTime().toString("MM-dd HH:mm")
+
 // 气泡方向
 typedef enum {
     None,

@@ -25,6 +25,7 @@ MyServer::~MyServer()
 bool MyServer::StartListen(int port)
 {
     m_tcpServer->listen(QHostAddress::Any, static_cast<quint16>(port));
+    qDebug() << "开启监听" << port;
     return true;
 }
 
@@ -64,10 +65,6 @@ void TcpMsgServer::sendUserMessageQueue(const QString &userId) // 上线的Id
         return;
     }
     QList<QVariantMap> msgList = DataBaseMag::getInstance()->getUserMessageQueue(userId.toInt());
-    //    qDebug() << msgList;
-    //    msgMap["request_userId"] = query.value("request_userId");
-    //    msgMap["accept_userId"] = query.value("accept_userId");
-    //    msgMap["message_type"] = query.value("message_type");
     foreach (QVariantMap msg, msgList)
     {
         quint8 type = static_cast<quint8>(msg["message_type"].toInt());
@@ -75,7 +72,9 @@ void TcpMsgServer::sendUserMessageQueue(const QString &userId) // 上线的Id
         int targetId = msg["accept_userId"].toInt();
         QString friendName = DataBaseMag::getInstance()->getUsernameFromId(QString::number(targetId));
         QJsonObject jsonObj = msg["data"].toJsonObject();
-        jsonObj.insert("type", type);
+        if(type != 66) {
+            jsonObj.insert("type", type);
+        }
         jsonObj.insert("name", friendName);
 
         qDebug() << "myServer:80 转发离线队列消息给" << friendName;
