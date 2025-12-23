@@ -203,7 +203,16 @@ void MySocket::sendMsgType(const quint8 &nType, const QJsonValue &dataVal)
         emit signalStatus(SendFile, dataVal);
         break;
     }
-
+    case DeleteFriend:
+    {
+        emit signalStatus(DeleteFriend, dataVal);
+        break;
+    }
+    case CreateGroup:
+    {
+        emit signalStatus(CreateGroup, dataVal);
+        break;
+    }
     }
 }
 

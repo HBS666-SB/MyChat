@@ -56,6 +56,8 @@ private:
     void ParseGetMyFriend(const QJsonValue &dataVal);
     void ParseGetMyGroups(const QJsonValue &dataVal);
 
+    void ParseDeleteMyFriend(const QJsonValue &dataVal);
+
     void ParseRefreshFriend(const QJsonValue &dataVal);
     void ParseRefreshGroups(const QJsonValue &dataVal);
 

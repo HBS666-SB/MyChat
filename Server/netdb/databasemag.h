@@ -47,8 +47,10 @@ public:
     void insertMessageQueue(const int &senderId, const int &acceptId, quint8 type, const QJsonValue &dataVal);
     QList<QVariantMap> getUserMessageQueue(const int &userId);
     void addFriend(const int &userId, const int &friendId);
+    void deleteFriend(const int &userId, const int &friendId);
     bool isOnline(const int &userId);
     QJsonValue getMyFriends(const int &userId);
+    void addGroup(const int &userId, const QString groupName);
 
 signals:
 

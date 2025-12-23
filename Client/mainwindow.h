@@ -22,9 +22,11 @@ public:
 //    void addFriend(const QJsonValue &dataVal);
     void addFriendRequist(const QJsonValue &dataVal);
     void addFriendReply(const QJsonValue &dataVal);
+    void deleteFriend(const QJsonValue &dataVal);
     void showServerFriendInfo(const QJsonValue &dataVal);   //显示服务器发送过来的好友信息
     void reFreshFriends(const QJsonValue &dataVal);
     void receiveMessage(const QJsonValue &dataVal);     //解析消息数据
+    void createGroup(const QJsonValue &dataVal);
 
 private slots:
     void sltButtonClicked(int index);
@@ -38,10 +40,13 @@ private slots:
     void onAddFriendMenuDidSelected(QAction* action);
     void SltFriendsClicked(QQCell *cell);
     void onChildPopMenuDidSelected(QAction* action);
+    void onGroupPopMenuDidSelected(QAction* action);
 
     void sltStatus(const quint8 &status,const QJsonValue &dataVal);
 
     void SltFriendChatWindowClose();
+
+    void SltGroupsClicked(QQCell *cell);
 private:
     // 添加系统菜单处理
     void InitSysMenu();

@@ -423,6 +423,20 @@ void DataBaseMag::addFriend(const int &userId, const int &friendId)
     return;
 }
 
+void DataBaseMag::deleteFriend(const int &userId, const int &friendId)
+{
+    QSqlQuery query;
+    QString sql;
+    sql = QString("DELETE FROM FRIEND WHERE user_id = :userId AND friend_id = :friendId");
+    query.prepare(sql);
+    query.bindValue(":userId", userId);
+    query.bindValue(":friendId", friendId);
+    if(!query.exec()){
+        qDebug() << "从数据库删除好友出错" << query.lastError();
+        return;
+    }
+}
+
 bool DataBaseMag::isOnline(const int &userId)
 {
     QSqlQuery query;
@@ -469,6 +483,24 @@ QJsonValue DataBaseMag::getMyFriends(const int &userId)
     return sendJsonVal;
 }
 
+void DataBaseMag::addGroup(const int &userId, const QString groupName)
+{
+    if(userId < 0 || groupName.isEmpty()){
+        qDebug() << "数据库插入群组失败";
+        return;
+    }
+    QSqlQuery query(userdb);
+    QString sql;
+    sql = QString("INSERT INTO GROUPS (group_name, creator_id) ");
+    sql.append("VALUES (:groupName, :creatorId);");
+    query.prepare(sql);
+    query.bindValue(":groupName", groupName);
+    query.bindValue(":creatorId", userId);
+    if(!query.exec()){
+        qDebug() << "添加群组出错" << query.lastError();
+        return ;
+    }
+}
 
 void DataBaseMag::queryAll()
 {

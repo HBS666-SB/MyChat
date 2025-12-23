@@ -37,12 +37,16 @@ public:
     // 好友操作
     void AddFriend(const int &userId, const QString &friendName ,int status);
     QJsonValue GetMyFriend();
+    bool deleteFriend(const int &userId);
 
     // 消息操作
     void AddHistoryMsg(const int &userId, ItemInfo *itemInfo);
     QVector<QJsonObject> getHistoryMsg(const int &id, const int &count = 0);
     bool isMyFriend(QString friendName);
     void removeFriend(const QString &friendName);
+
+    //群组操作
+    void AddGroup(const int &userId, const QString &groupName);
 
 
 private:

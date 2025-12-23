@@ -7,7 +7,6 @@
 #include "comapi/myapp.h"
 #include <QInputDialog>
 #include <QJsonObject>
-#include <QMessageBox>
 #include "netdb/databasemsg.h"
 #include <netdb/databasemsg.h>
 #include "comapi/unit.h"
@@ -156,6 +155,29 @@ void MainWindow::InitQQListMenu()
     connect(childMenu, SIGNAL(triggered(QAction*)), this, SLOT(onChildPopMenuDidSelected(QAction*)));
     ui->frindListWidget->setChildPopMenu(childMenu);
 
+    //组列表
+    QMenu *myGroupMenu = new QMenu(this);
+    myGroupMenu->addAction(tr("创建讨论组"));
+    myGroupMenu->addAction(tr("加入讨论组"));
+    myGroupMenu->addAction(tr("删除该组"));
+    myGroupMenu->addSeparator();
+    connect(myGroupMenu, SIGNAL(triggered(QAction*)), this, SLOT(onGroupPopMenuDidSelected(QAction*)));
+    ui->groupListWidget->setGroupPopMenu(myGroupMenu);
+    //设置子菜单
+    QMenu *groupChildMen = new QMenu(this);
+    groupChildMen->addAction(tr("发送即时消息"));
+    ui->groupListWidget->setChildPopMenu(groupChildMen);
+
+    //添加默认项
+    QQCell *groupCell = new QQCell;
+    groupCell->groupName = QString(tr("我的群组"));
+    groupCell->isOpen = false;
+    groupCell->type = QQCellType_GroupEx;
+    groupCell->name = QString(tr("讨论组"));
+    groupCell->subTitle = QString("(0/0)");
+    ui->groupListWidget->insertQQCell(groupCell);
+
+    connect(ui->groupListWidget, SIGNAL(onChildDidDoubleClicked(QQCell*)), this, SLOT(SltGroupsClicked(QQCell*)));
 
 }
 // 托盘菜单
@@ -232,6 +254,35 @@ void MainWindow::onChildPopMenuDidSelected(QAction *action)
         qDebug() << "send message" << cell->id;
         SltFriendsClicked(cell);
 
+    } else if (!action->text().compare(tr("删除联系人"))) {
+        qDebug() << "删除联系人" << cell->id;
+        bool isDelete = DatabaseMsg::getInstance()->deleteFriend(cell->id);
+        if(isDelete){
+            CMessageBox::Infomation(this, "删除好友成功", "删除好友");
+            QJsonObject jsonObj;
+            jsonObj.insert("id", MyApp::m_nId);
+            jsonObj.insert("to", cell->id);
+            m_tcpSocket->sendMessage(DeleteFriend, QJsonValue(jsonObj));
+        }else{
+            CMessageBox::Warning(this, "删除好友失败", "删除好友");
+        }
+    }
+}
+
+void MainWindow::onGroupPopMenuDidSelected(QAction *action)
+{
+    if(!action->text().compare(tr("创建讨论组")))
+    {
+        QString text = CInputDialog::GetInputText(this, "群组");
+        if (!text.isEmpty()) {
+
+            // 构建 Json 对象
+            QJsonObject json;
+            json.insert("id", m_tcpSocket->GetUserId());
+            json.insert("name", text);
+
+            m_tcpSocket->sendMessage(CreateGroup, json);
+        }
     }
 }
 
@@ -240,25 +291,19 @@ void MainWindow::onAddFriendMenuDidSelected(QAction *action)
 {
     if (!action->text().compare(tr("添加好友")))
     {
-        bool isOk;
-        QString name = QInputDialog::getText(this, "加好友", "请输入要添加的好友名称",QLineEdit::Normal,QString(),&isOk);
-
-        if (!isOk) {
-            return;
-        }
+        QString name = CInputDialog::GetInputText(this, "zhangsan");
 
         if(name.isEmpty())
         {
-            QMessageBox::warning(this,"添加好友", "请输入用户名");
             return;
         }
         if(name == MyApp::m_strUserName){
-            QMessageBox::warning(this,"添加好友", "不能添加自己为好友");
+            CMessageBox::Warning(this, "不能添加自己为好友","添加好友");
             return;
         }
         // 首先判断该用户是否已经是我的好友了
         if (DatabaseMsg::getInstance()->isMyFriend(name)) {
-            QMessageBox::information(this,"添加好友", "该用户已经是你的好友了！");
+            CMessageBox::Infomation(this, "该用户已经是你的好友了！","添加好友");
             return;
         }
         // 构建 Json 对象
@@ -267,7 +312,6 @@ void MainWindow::onAddFriendMenuDidSelected(QAction *action)
         json.insert("name", name);
 
         m_tcpSocket->sendMessage(AddFriend, json);
-        QMessageBox::information(this,"添加好友","好友申请发送成功");
     }
     else if (!action->text().compare(tr("刷新")))
     {
@@ -308,7 +352,7 @@ void MainWindow::sltStatus(const quint8 &status, const QJsonValue &dataVal)
     switch (status) {
     case AddFriendFailed_NoneUser:
     {
-        QMessageBox::warning(this,"添加好友","用户名不存在");
+        CMessageBox::Warning(this,"用户名不存在","添加好友");
         break;
     }
     case AddFriendRequist:
@@ -346,6 +390,16 @@ void MainWindow::sltStatus(const quint8 &status, const QJsonValue &dataVal)
         receiveMessage(dataVal);
         break;
     }
+    case DeleteFriend:
+    {
+        deleteFriend(dataVal);
+        break;
+    }
+    case CreateGroup:
+    {
+        createGroup(dataVal);
+        break;
+    }
     }
 }
 
@@ -361,7 +415,12 @@ void MainWindow::SltFriendChatWindowClose()
         this->show();
     }
     m_chatFriendWindows.removeOne(chatWindow);
-//    chatWindow->deleteLater();
+    //    chatWindow->deleteLater();
+}
+
+void MainWindow::SltGroupsClicked(QQCell *cell)
+{
+
 }
 
 void MainWindow::addFriendRequist(const QJsonValue &dataVal)
@@ -374,12 +433,12 @@ void MainWindow::addFriendRequist(const QJsonValue &dataVal)
     //要对方的名字
     QString name = jsonObj.value("name").toString();
     int id = jsonObj.value("id").toInt();               //好友Id
-    QMessageBox::StandardButton result = QMessageBox::question(
-                this,"添加好友",
-                QString("'%1'添加你为好友").arg(name),
-                QMessageBox::Ok | QMessageBox::Cancel,
-                QMessageBox::Ok);
-    if(result == QMessageBox::Ok){
+    int result = CMessageBox::Question(
+        this,
+        QString("'%1'添加你为好友").arg(name),
+        "添加好友"
+    );
+    if(result == QDialog::Accepted){
         qDebug() << "已同意好友申请";
         DatabaseMsg::getInstance()->AddFriend(id,name,1);
 
@@ -418,6 +477,18 @@ void MainWindow::addFriendReply(const QJsonValue &dataVal)
     DatabaseMsg::getInstance()->removeFriend(friendName);
     qDebug() << "对方拒绝了你的好友申请";
 
+}
+
+void MainWindow::deleteFriend(const QJsonValue &dataVal)
+{
+    if(!dataVal.isObject()){
+        return;
+    }
+    QJsonObject jsonObj = dataVal.toObject();
+    int friendId = jsonObj.value("id").toInt();
+    QString friendName = DatabaseMsg::getInstance()->getFriendName(friendId);
+    CMessageBox::Infomation(this, QString("'%1'删除了你的好友").arg(friendName), "删除好友");
+    DatabaseMsg::getInstance()->deleteFriend(friendId);
 }
 
 void MainWindow::showServerFriendInfo(const QJsonValue &dataVal)
@@ -489,7 +560,7 @@ void MainWindow::reFreshFriends(const QJsonValue &dataVal)
             cell->id = nId;
             cell->status = nStatus;
             ui->frindListWidget->insertQQCell(cell);
-            //            qDebug() << "获取好友信息" << cell->id << cell->name;
+            //    qDebug() << "获取好友信息" << cell->id << cell->name;
         }
 
         ui->frindListWidget->upload();
@@ -538,6 +609,17 @@ void MainWindow::receiveMessage(const QJsonValue &dataVal)
     delete itemInfo;
     itemInfo = nullptr;
 
+}
+
+void MainWindow::createGroup(const QJsonValue &dataVal)
+{
+    if(!dataVal.isObject()){
+        qDebug() << "创建群组失败，服务器传输的数据有误";
+        return;
+    }
+    QJsonObject jsonObj = dataVal.toObject();
+    QString name = jsonObj.value("name").toString();
+    DatabaseMsg::getInstance()->AddGroup(MyApp::m_nId, name);
 }
 
 

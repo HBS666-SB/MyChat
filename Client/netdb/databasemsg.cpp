@@ -195,6 +195,23 @@ QJsonValue DatabaseMsg::GetMyFriend()
     return jsonVal;
 }
 
+bool DatabaseMsg::deleteFriend(const int &userId)
+{
+    if(userId < 0){
+        qDebug() << "删除好友失败，好友Id < 0";
+        return false;
+    }
+    QSqlQuery query(userdb);
+    QString sql = QString("DELETE FROM FRIEND WHERE user_id = :userId;");
+    query.prepare(sql);
+    query.bindValue(":userId", userId);
+    if(!query.exec()){
+        qDebug() << "删除好友操作错误" << query.lastError();
+        return false;
+    }
+    return true;
+}
+
 void DatabaseMsg::AddHistoryMsg(const int &userId, ItemInfo *itemInfo)
 {
     if (userId < 0)
@@ -314,4 +331,24 @@ void DatabaseMsg::removeFriend(const QString &friendName)
         qDebug() << "删除好友操作Sql执行失败";
         return;
     }
+}
+
+void DatabaseMsg::AddGroup(const int &userId, const QString &groupName)
+{
+    if(userId < 0 || groupName.isEmpty()){
+        qDebug() << "数据库插入群组失败";
+        return;
+    }
+    QSqlQuery query(userdb);
+    QString sql;
+    sql = QString("INSERT INTO GROUPS (group_name, creator_id) ");
+    sql.append("VALUES (:groupName, :creatorId);");
+    query.prepare(sql);
+    query.bindValue(":groupName", groupName);
+    query.bindValue(":creatorId", userId);
+    if(!query.exec()){
+        qDebug() << "添加群组出错" << query.lastError();
+        return ;
+    }
+
 }

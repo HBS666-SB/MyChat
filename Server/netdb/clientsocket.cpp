@@ -83,6 +83,16 @@ void ClientSocket::sendMsgType(const quint8 &nType, const QJsonValue &dataVal)
         ParseSendFile(dataVal);
         break;
     }
+    case DeleteFriend:
+    {
+        ParseDeleteMyFriend(dataVal);
+        break;
+    }
+    case CreateGroup:
+    {
+        ParseCreateGroup(dataVal);
+        break;
+    }
     }
 }
 
@@ -293,7 +303,15 @@ void ClientSocket::ParseAddGroup(const QJsonValue &dataVal)
 
 void ClientSocket::ParseCreateGroup(const QJsonValue &dataVal)
 {
-
+    if(!dataVal.isObject()){
+        qDebug() << "创建群组失败，客户端传输的数据有误";
+        return;
+    }
+    QJsonObject jsonObj = dataVal.toObject();
+    QString name = jsonObj.value("name").toString();
+    int id = jsonObj.value("id").toInt();
+    DataBaseMag::getInstance()->addGroup(id, name);
+    SltSendMessage(CreateGroup, dataVal);
 }
 
 void ClientSocket::ParseGetMyFriend(const QJsonValue &dataVal)
@@ -304,6 +322,24 @@ void ClientSocket::ParseGetMyFriend(const QJsonValue &dataVal)
 void ClientSocket::ParseGetMyGroups(const QJsonValue &dataVal)
 {
 
+}
+
+void ClientSocket::ParseDeleteMyFriend(const QJsonValue &dataVal)
+{
+    if(!dataVal.isObject()){
+        qDebug() << "删除好友操作错误";
+        return;
+    }
+    QJsonObject jsonObj = dataVal.toObject();
+//    jsonObj.insert("id", MyApp::m_nId);
+//      jsonObj.insert("to", cell->id);
+    int id = jsonObj.value("id").toInt();
+    int friendId = jsonObj.value("to").toInt();
+    DataBaseMag::getInstance()->deleteFriend(id, friendId);
+    DataBaseMag::getInstance()->deleteFriend(friendId, id);
+    QJsonObject resObj;
+    resObj.insert("id", id);
+    emit signalPrivateMsgToClient(id, friendId, DeleteFriend, QJsonValue(resObj));
 }
 
 void ClientSocket::ParseRefreshFriend(const QJsonValue &dataVal)
