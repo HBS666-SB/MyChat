@@ -46,7 +46,7 @@ public:
     void removeFriend(const QString &friendName);
 
     //群组操作
-    void AddGroup(const int &userId, const QString &groupName);
+    void AddGroup(const int &userId, const QString &groupName, const int &groupId);
 
 
 private:

@@ -93,6 +93,16 @@ void ClientSocket::sendMsgType(const quint8 &nType, const QJsonValue &dataVal)
         ParseCreateGroup(dataVal);
         break;
     }
+    case RefreshGroups:
+    {
+        ParseRefreshGroups(dataVal);
+        break;
+    }
+    case AddGroupRequist:
+    {
+        ParseAddGroup(dataVal);
+        break;
+    }
     }
 }
 
@@ -193,6 +203,7 @@ void ClientSocket::ParseLogin(const QJsonValue &dataVal)
             emit signalLoginSuccess(this,QString::number(m_nId));
             qDebug() << "登陆成功" << dataVal;
             SltSendMessage(GetMyFriends,DataBaseMag::getInstance()->getMyFriends(m_nId));
+            SltSendMessage(GetMyGroups, DataBaseMag::getInstance()->getMyGroup(m_nId));
             return;
         }else if(msg == "OnLine"){
             SltSendMessage(LoginRepeat, jsonObj);
@@ -298,7 +309,21 @@ void ClientSocket::ParseAddFriendReply(const QJsonValue &dataVal)
 
 void ClientSocket::ParseAddGroup(const QJsonValue &dataVal)
 {
-
+    if(!dataVal.isObject()){
+        qDebug() << "添加群组失败,客户端传输的数据有误";
+        return;
+    }
+//    json.insert("id", MyApp::m_nId);
+//    json.insert("groupId", id.toInt());
+    QJsonObject jsonObj = dataVal.toObject();
+    int id = jsonObj.value("id").toInt();
+    int groupId = jsonObj.value("groupId").toInt();
+//    bool isSuccess = DataBaseMag::getInstance()->addGroupMember(id, groupId, Member);
+    QJsonObject resObj;
+    resObj.insert("name", DataBaseMag::getInstance()->getUsernameFromId(QString::number(id)));
+    int targetId = DataBaseMag::getInstance()->getGroupOwner(groupId);
+    qDebug() << targetId;
+    emit signalPrivateMsgToClient(id, targetId, AddGroupRequist, QJsonValue(resObj));
 }
 
 void ClientSocket::ParseCreateGroup(const QJsonValue &dataVal)
@@ -310,8 +335,9 @@ void ClientSocket::ParseCreateGroup(const QJsonValue &dataVal)
     QJsonObject jsonObj = dataVal.toObject();
     QString name = jsonObj.value("name").toString();
     int id = jsonObj.value("id").toInt();
-    DataBaseMag::getInstance()->addGroup(id, name);
-    SltSendMessage(CreateGroup, dataVal);
+    int groupId = DataBaseMag::getInstance()->addGroup(id, name);
+    jsonObj.insert("groupId", groupId);
+    SltSendMessage(CreateGroup, QJsonValue(jsonObj));
 }
 
 void ClientSocket::ParseGetMyFriend(const QJsonValue &dataVal)
@@ -360,7 +386,18 @@ void ClientSocket::ParseRefreshFriend(const QJsonValue &dataVal)
 
 void ClientSocket::ParseRefreshGroups(const QJsonValue &dataVal)
 {
+    if(!dataVal.isObject()){
+        qDebug() << "客户端发送的刷新请求出错 dataVal = " << dataVal;
+        return;
 
+    }
+    QJsonObject jsonObj = dataVal.toObject();
+    int id = jsonObj.value("id").toInt();
+
+    QJsonValue sendVal = DataBaseMag::getInstance()->getMyGroup(id);
+
+
+    SltSendMessage(RefreshGroups, sendVal);
 }
 
 void ClientSocket::ParseFriendMessages(const QByteArray &reply)

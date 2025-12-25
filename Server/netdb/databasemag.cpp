@@ -461,14 +461,14 @@ QJsonValue DataBaseMag::getMyFriends(const int &userId)
 {
     QJsonArray jsonArr;
     QSqlQuery query;
-    QString sql;//SELECT friend_id FROM user_id = :userId
+    QString sql;
     sql = QString("SELECT status, head, name, id FROM USERINFO ");
     sql.append("WHERE id IN (SELECT friend_id FROM FRIEND WHERE user_id = :userId);");
     query.prepare(sql);
     query.bindValue(":userId", userId);
 
     if(!query.exec()){
-        qDebug() << "获取用户好友失败 sql执行出错";
+        qDebug() << "获取用户好友失败 sql执行出错" << query.lastError();;
     }
     while(query.next()){
         QJsonObject jsonObj;
@@ -483,11 +483,36 @@ QJsonValue DataBaseMag::getMyFriends(const int &userId)
     return sendJsonVal;
 }
 
-void DataBaseMag::addGroup(const int &userId, const QString groupName)
+QJsonValue DataBaseMag::getMyGroup(const int &userId)
+{
+    QJsonArray jsonArr;
+    QSqlQuery query;
+//    QString sql = QString("SELECT group_id, identity FROM GROUP_MEMBER WHERE user_id = :userId;");
+    QString sql = QString("SELECT gm.group_id, gm.identity, g.group_head, g.group_name, g.creator_id ");
+    sql.append("FROM GROUP_MEMBER gm LEFT JOIN GROUPS g ON gm.group_id = g.group_id ");
+    sql.append("WHERE gm.user_id = :userId");
+    query.prepare(sql);
+    query.bindValue(":userId", userId);
+    if(!query.exec()) {
+        qDebug() << "获取小组信息失败" << query.lastError();
+    }
+    while(query.next()){
+        QJsonObject jsonObj;
+        jsonObj.insert("id", query.value("group_id").toInt());
+        jsonObj.insert("identity", query.value("identity").toInt());
+        jsonObj.insert("head", query.value("group_head").toString());
+        jsonObj.insert("name", query.value("group_name").toString());
+        jsonObj.insert("owner", query.value("creator_id").toInt());
+        jsonArr.append(jsonObj);
+    }
+    return QJsonValue(jsonArr);
+}
+
+int DataBaseMag::addGroup(const int &userId, const QString groupName)
 {
     if(userId < 0 || groupName.isEmpty()){
         qDebug() << "数据库插入群组失败";
-        return;
+        return 0;
     }
     QSqlQuery query(userdb);
     QString sql;
@@ -498,8 +523,49 @@ void DataBaseMag::addGroup(const int &userId, const QString groupName)
     query.bindValue(":creatorId", userId);
     if(!query.exec()){
         qDebug() << "添加群组出错" << query.lastError();
-        return ;
+        return 0;
     }
+    QVariant insertId = query.lastInsertId();
+    if (!insertId.isValid()) {
+        qDebug() << "获取group_id失败：ID无效";
+        return 0;
+    }
+    qlonglong groupIdLL = insertId.toLongLong();
+    int groupId = static_cast<int>(groupIdLL);
+
+//    qDebug() << "插入成功，group_id=" << groupId; // 打印验证
+    addGroupMember(userId, groupId, Owner);
+    return groupId;
+}
+
+bool DataBaseMag::addGroupMember(const int &userId, const int &groupId, GroupIdentity identity)
+{
+    if(userId < 0 || groupId < 0) return false;
+    QSqlQuery query;
+    QString sql = "INSERT INTO GROUP_MEMBER (group_id, user_id, identity) VALUES (:groupId, :userId, :identity);";
+    query.prepare(sql);
+    query.bindValue(":groupId", groupId);
+    query.bindValue(":userId", userId);
+    query.bindValue(":identity", identity);
+    if(!query.exec()){
+        qDebug() << "添加群成员错误" << query.lastError();
+        return false;
+    }
+    return true;
+}
+
+int DataBaseMag::getGroupOwner(const int &groupId)
+{
+    QSqlQuery query;
+    QString sql = "SELECT creator_id from GROUPS WHERE group_id = :groupId";
+    query.prepare(sql);
+    query.bindValue(":groupId", groupId);
+    if(!query.exec()){
+        qDebug() << "获取群主Id错误" << query.lastError();
+        return -1;
+    }
+    query.next();
+    return query.value("creator_id").toInt();
 }
 
 void DataBaseMag::queryAll()

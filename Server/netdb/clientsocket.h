@@ -23,6 +23,7 @@ signals:
     void signalDisConnected(ClientSocket *client);
     void signalDownloadFile(const QJsonValue &json);
     void signalLoginSuccess(ClientSocket *client, const QString &userId);
+    //id发给targetId
     void signalPrivateMsgToClient(const int &id,const int &targetId, const quint8 &type, const QJsonValue &json);
 public slots:
 

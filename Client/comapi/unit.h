@@ -96,12 +96,18 @@
 
 #define  DATE_TIME QDateTime::currentDateTime().toString("MM-dd HH:mm")
 
+
 // 气泡方向
 typedef enum {
     None,
     Left,
     Right
 } Orientation;
+
+typedef enum {
+    Member,
+    Owner,
+} GroupIdentity;
 
 typedef enum {
     Text,           // 普通文字消息

@@ -24,7 +24,7 @@ public:
     void addFriendReply(const QJsonValue &dataVal);
     void deleteFriend(const QJsonValue &dataVal);
     void showServerFriendInfo(const QJsonValue &dataVal);   //显示服务器发送过来的好友信息
-    void reFreshFriends(const QJsonValue &dataVal);
+    void showServerGroupsInfo(const QJsonValue &dataVal);   //显示服务器发送来得到群组信息
     void receiveMessage(const QJsonValue &dataVal);     //解析消息数据
     void createGroup(const QJsonValue &dataVal);
 

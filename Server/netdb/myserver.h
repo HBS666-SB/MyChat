@@ -62,6 +62,7 @@ private slots:
     void SltConnected();
     void SltDisConnected();
 //    void SltPublicMsgToClient(const quint8 &type, const int &id, const QJsonValue &json); //广播
+    //id发给targetId
     void SltPrivateMsgToClient(const int &id, const int &targetId, const quint8 &type, const QJsonValue &json);    //单播
 
     void SltLoginSuccess(ClientSocket *client, const QString &userId);

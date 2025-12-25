@@ -161,6 +161,8 @@ void MainWindow::InitQQListMenu()
     myGroupMenu->addAction(tr("加入讨论组"));
     myGroupMenu->addAction(tr("删除该组"));
     myGroupMenu->addSeparator();
+    myGroupMenu->addAction(tr("刷新"));
+    myGroupMenu->addSeparator();
     connect(myGroupMenu, SIGNAL(triggered(QAction*)), this, SLOT(onGroupPopMenuDidSelected(QAction*)));
     ui->groupListWidget->setGroupPopMenu(myGroupMenu);
     //设置子菜单
@@ -284,6 +286,22 @@ void MainWindow::onGroupPopMenuDidSelected(QAction *action)
             m_tcpSocket->sendMessage(CreateGroup, json);
         }
     }
+    if(!action->text().compare(tr("加入讨论组")))
+    {
+        QString id = CInputDialog::GetInputText(this, "1","请输入群号:");
+        if(!id.isEmpty()) {
+            QJsonObject json;
+            json.insert("id", MyApp::m_nId);
+            json.insert("groupId", id.toInt());
+            m_tcpSocket->sendMessage(AddGroupRequist, json);
+        }
+    }
+    if(!action->text().compare(tr("刷新"))){
+        QJsonObject jsonObj;
+        jsonObj.insert("id",MyApp::m_nId);
+
+        m_tcpSocket->sendMessage(RefreshGroups, QJsonValue(jsonObj));
+    }
 }
 
 
@@ -372,7 +390,7 @@ void MainWindow::sltStatus(const quint8 &status, const QJsonValue &dataVal)
     }
     case RefreshFriends:
     {
-        reFreshFriends(dataVal);
+        showServerFriendInfo(dataVal);
         break;
     }
     case SendMsg:
@@ -399,6 +417,15 @@ void MainWindow::sltStatus(const quint8 &status, const QJsonValue &dataVal)
     {
         createGroup(dataVal);
         break;
+    }
+    case GetMyGroups:
+    {
+        showServerGroupsInfo(dataVal);
+        break;
+    }
+    case RefreshGroups:
+    {
+        showServerGroupsInfo(dataVal);
     }
     }
 }
@@ -434,10 +461,10 @@ void MainWindow::addFriendRequist(const QJsonValue &dataVal)
     QString name = jsonObj.value("name").toString();
     int id = jsonObj.value("id").toInt();               //好友Id
     int result = CMessageBox::Question(
-        this,
-        QString("'%1'添加你为好友").arg(name),
-        "添加好友"
-    );
+                this,
+                QString("'%1'添加你为好友").arg(name),
+                "添加好友"
+                );
     if(result == QDialog::Accepted){
         qDebug() << "已同意好友申请";
         DatabaseMsg::getInstance()->AddFriend(id,name,1);
@@ -491,11 +518,64 @@ void MainWindow::deleteFriend(const QJsonValue &dataVal)
     DatabaseMsg::getInstance()->deleteFriend(friendId);
 }
 
+void MainWindow::showServerGroupsInfo(const QJsonValue &dataVal)
+{
+    if(!dataVal.isArray()){
+        qDebug() << "获取好友信息通信有误";
+        return;
+    }
+    QList<QQCell *> groups = ui->groupListWidget->getCells();
+    if (!groups.isEmpty()) {
+        QQCell* myGroup = groups.at(0);
+
+        for (QQCell* oldChild : myGroup->childs) {
+            if(oldChild) delete oldChild;
+        }
+        myGroup->childs.clear();
+    }
+    QJsonArray array = dataVal.toArray();
+    int size = array.size();
+    for(int i = 0;i < size; i++){
+        QJsonObject jsonObj = array.at(i).toObject();
+        QString strHead = jsonObj.value("head").toString();
+        int owner = jsonObj.value("owner").toInt();
+        if(!QFile::exists(MyApp::m_strHeadFile + strHead)){
+            QJsonObject jsonObj;
+            jsonObj.insert("from", MyApp::m_nId);
+            jsonObj.insert("msg",strHead);
+            m_tcpSocket->sendMessage(GetFile, jsonObj);
+            QTimer::singleShot(100, this, [=]() {
+                m_tcpSocket->sendMessage(GetFile, jsonObj);
+            });
+        }
+        QQCell* cell = new QQCell;
+        cell->groupName = QString(tr("我的群组"));
+        cell->iconPath = MyApp::m_strHeadPath + jsonObj.value("head").toString();
+        cell->type = QQCellType_Child;
+        cell->name = jsonObj.value("name").toString();
+        owner == MyApp::m_nId ? cell->subTitle = QString("我的群，我做主...  群号：%1").arg(jsonObj.value("id").toInt())
+                : cell->subTitle = QString("我加入的群  群号：%1").arg(jsonObj.value("id").toInt());
+        cell->id = jsonObj.value("id").toInt();
+        cell->status = OnLine;
+        ui->groupListWidget->insertQQCell(cell);
+    }
+    ui->groupListWidget->upload();
+}
 void MainWindow::showServerFriendInfo(const QJsonValue &dataVal)
 {
     if(!dataVal.isArray()){
         qDebug() << "获取好友信息通信有误";
         return;
+    }
+    //为了刷新出新添加的好友和头像灰度改变，先删除，再添加
+    QList<QQCell *> groups = ui->frindListWidget->getCells();
+    if (!groups.isEmpty()) {
+        QQCell* myFriendGroup = groups.at(0); // 我的好友分组
+
+        for (QQCell* oldChild : myFriendGroup->childs) {
+            if(oldChild) delete oldChild;
+        }
+        myFriendGroup->childs.clear();
     }
     QJsonArray array = dataVal.toArray();
     int size = array.size();
@@ -508,9 +588,9 @@ void MainWindow::showServerFriendInfo(const QJsonValue &dataVal)
             QJsonObject jsonObj;
             jsonObj.insert("from", MyApp::m_nId);
             jsonObj.insert("msg",strHead);
-            m_tcpSocket->sendMessage(GetFile, jsonObj);
-
-            myHelper::Sleep(100);
+            QTimer::singleShot(100, this, [=]() {
+                m_tcpSocket->sendMessage(GetFile, jsonObj);
+            });
         }
 
         QQCell* cell = new QQCell;
@@ -527,46 +607,6 @@ void MainWindow::showServerFriendInfo(const QJsonValue &dataVal)
 
     ui->frindListWidget->upload();
 }
-
-void MainWindow::reFreshFriends(const QJsonValue &dataVal)
-{
-    if (dataVal.isArray()) {
-        QJsonArray array = dataVal.toArray();
-        int nSize = array.size();
-        //为了刷新出新添加的好友和头像灰度改变，先删除，再添加
-        QList<QQCell *> groups = ui->frindListWidget->getCells();
-        if (!groups.isEmpty()) {
-            QQCell* myFriendGroup = groups.at(0); // 我的好友分组
-
-            for (QQCell* oldChild : myFriendGroup->childs) {
-                delete oldChild;
-            }
-            myFriendGroup->childs.clear();
-        }
-
-
-        for (int i = 0; i < nSize; ++i) {
-            QJsonObject jsonObj = array.at(i).toObject();
-            int nId = jsonObj.value("id").toInt();
-            int nStatus = jsonObj.value("status").toInt();
-            QString strHead = jsonObj.value("head").toString();
-
-            QQCell* cell = new QQCell;
-            cell->groupName = QString(tr("我的好友"));
-            cell->iconPath = MyApp::m_strHeadPath + strHead;
-            cell->type = QQCellType_Child;
-            cell->name = jsonObj.value("name").toString();
-            cell->subTitle = QString("当前用户状态：%1 ").arg(OnLine == nStatus ? tr("在线") : tr("离线"));
-            cell->id = nId;
-            cell->status = nStatus;
-            ui->frindListWidget->insertQQCell(cell);
-            //    qDebug() << "获取好友信息" << cell->id << cell->name;
-        }
-
-        ui->frindListWidget->upload();
-    }
-}
-
 void MainWindow::receiveMessage(const QJsonValue &dataVal)
 {
     if(!dataVal.isObject()){
@@ -619,7 +659,8 @@ void MainWindow::createGroup(const QJsonValue &dataVal)
     }
     QJsonObject jsonObj = dataVal.toObject();
     QString name = jsonObj.value("name").toString();
-    DatabaseMsg::getInstance()->AddGroup(MyApp::m_nId, name);
+    int groupId = jsonObj.value("groupId").toInt();
+    DatabaseMsg::getInstance()->AddGroup(MyApp::m_nId, name, groupId);
 }
 
 

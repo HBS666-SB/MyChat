@@ -333,7 +333,7 @@ void DatabaseMsg::removeFriend(const QString &friendName)
     }
 }
 
-void DatabaseMsg::AddGroup(const int &userId, const QString &groupName)
+void DatabaseMsg::AddGroup(const int &userId, const QString &groupName, const int &groupId)
 {
     if(userId < 0 || groupName.isEmpty()){
         qDebug() << "数据库插入群组失败";
@@ -341,9 +341,10 @@ void DatabaseMsg::AddGroup(const int &userId, const QString &groupName)
     }
     QSqlQuery query(userdb);
     QString sql;
-    sql = QString("INSERT INTO GROUPS (group_name, creator_id) ");
-    sql.append("VALUES (:groupName, :creatorId);");
+    sql = QString("INSERT INTO GROUPS (group_id, group_name, creator_id) ");
+    sql.append("VALUES (:groupId, :groupName, :creatorId);");
     query.prepare(sql);
+    query.bindValue(":groupId", groupId);
     query.bindValue(":groupName", groupName);
     query.bindValue(":creatorId", userId);
     if(!query.exec()){

@@ -105,6 +105,11 @@ typedef enum {
 } Orientation;
 
 typedef enum {
+    Member,
+    Owner,
+} GroupIdentity;
+
+typedef enum {
     Text,           // 普通文字消息
     Audio,          // 语音消息
     Picture,        // 图片消息

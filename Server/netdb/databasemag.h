@@ -50,8 +50,10 @@ public:
     void deleteFriend(const int &userId, const int &friendId);
     bool isOnline(const int &userId);
     QJsonValue getMyFriends(const int &userId);
-    void addGroup(const int &userId, const QString groupName);
-
+    QJsonValue getMyGroup(const int &userId);
+    int addGroup(const int &userId, const QString groupName);
+    bool addGroupMember(const int &userId, const int &groupId, GroupIdentity identity = Member);
+    int getGroupOwner(const int &groupId);
 signals:
 
 public slots:
