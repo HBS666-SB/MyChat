@@ -46,9 +46,10 @@ public:
     void removeFriend(const QString &friendName);
 
     //群组操作
-    void AddGroup(const int &userId, const QString &groupName, const int &groupId);
+    void AddGroup(const int &userId, const QString &groupHead, const QString &groupName, const int &groupId);
     QString getGroupName(const int &groupId);
-    bool addGroupMember(const int &userId, const int &groupId, GroupIdentity identity);
+    bool addGroupMember(const int &userId, const int &groupId, GroupIdentity identity = Member);
+    void addGroupMember(const int &userId, const int &groupId, const QString &joinTime, GroupIdentity identity = Member);
 
 
 private:

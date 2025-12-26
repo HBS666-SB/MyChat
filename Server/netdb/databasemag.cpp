@@ -568,6 +568,34 @@ int DataBaseMag::getGroupOwner(const int &groupId)
     return query.value("creator_id").toInt();
 }
 
+QString DataBaseMag::getGroupName(const int &groupId)
+{
+    QSqlQuery query;
+    QString sql = "SELECT group_name FROM GROUPS WHERE group_id = :groupId";
+    query.prepare(sql);
+    query.bindValue(":groupId", groupId);
+    if(!query.exec()){
+        qDebug() << "获取群组名错误" << query.lastError();
+        return "";
+    }
+    query.next();
+    return query.value("group_name").toString();
+}
+
+QString DataBaseMag::getGroupHead(const int &groupId)
+{
+    QSqlQuery query;
+    QString sql = "SELECT group_head FROM GROUPS WHERE group_id = :groupId";
+    query.prepare(sql);
+    query.bindValue(":groupId", groupId);
+    if(!query.exec()){
+        qDebug() << "获取群组头像错误" << query.lastError();
+        return "";
+    }
+    query.next();
+    return query.value("group_head").toString();
+}
+
 QHash<int, QSet<int> > DataBaseMag::initGroupMembersCache()
 {
     QHash<int, QSet<int> > hashSet;
@@ -584,6 +612,29 @@ QHash<int, QSet<int> > DataBaseMag::initGroupMembersCache()
     }
     qDebug() << "服务器启动：加载" << hashSet.size() << "个群组的成员缓存";
     return hashSet;
+}
+
+QJsonValue DataBaseMag::getGroupMember(const int &groupId)
+{
+    QJsonArray jsonArr;
+    QSqlQuery query;
+    QString sql = "SELECT user_id, identity, join_time FROM GROUP_MEMBER WHERE group_id = :groupId";
+    query.prepare(sql);
+    query.bindValue(":groupId", groupId);
+    if(!query.exec())
+    {
+        qDebug() << "获取群成员错误" << query.lastError();
+        return QJsonValue(jsonArr);
+    }
+    while(query.next()) {
+        QJsonObject jsonObj;
+        jsonObj.insert("groupId", groupId);
+        jsonObj.insert("userId", query.value("user_id").toInt());
+        jsonObj.insert("identity", query.value("identity").toInt());
+        jsonObj.insert("joinTime", query.value("join_time").toString());
+        jsonArr.append(jsonObj);
+    }
+    return QJsonValue(jsonArr);
 }
 
 void DataBaseMag::queryAll()

@@ -438,6 +438,9 @@ void MainWindow::sltStatus(const quint8 &status, const QJsonValue &dataVal)
         addGroupReply(dataVal);
         break;
     }
+    case AddGroupAccept:
+        addGroupAccept(dataVal);
+        break;
     }
 }
 
@@ -671,7 +674,7 @@ void MainWindow::createGroup(const QJsonValue &dataVal)
     QJsonObject jsonObj = dataVal.toObject();
     QString name = jsonObj.value("name").toString();
     int groupId = jsonObj.value("groupId").toInt();
-    DatabaseMsg::getInstance()->AddGroup(MyApp::m_nId, name, groupId);
+    DatabaseMsg::getInstance()->AddGroup(MyApp::m_nId, "default_group.png", name, groupId);
     DatabaseMsg::getInstance()->addGroupMember(MyApp::m_nId, groupId, Owner);
 }
 
@@ -708,15 +711,44 @@ void MainWindow::addGroupReply(const QJsonValue &dataVal)
         return;
     }
     QJsonObject jsonObj = dataVal.toObject();
-    //    resObj.insert("groupId", groupId);
-    //    resObj.insert("name", DataBaseMag::getInstance()->getUsernameFromId(QString::number(id)));    //群主名
     int groupId = jsonObj.value("groupId").toInt();
     QString name = jsonObj.value("name").toString();
     QString msg = jsonObj.value("msg").toString();
+    QString groupName = jsonObj.value("groupName").toString();
+    QString gropuHead = jsonObj.value("groupHead").toString();
+    int id = jsonObj.value("userId").toInt();     //新人Id
+    int ownerId = jsonObj.value("id").toInt();  //群主Id
     if(msg == QString("accept")) {
-        CMessageBox::Infomation(this, QString("你已经加入了群聊：'%1'").arg(groupId));
-
+        if(MyApp::m_nId == id){
+             DatabaseMsg::getInstance()->AddGroup(groupId, gropuHead, groupName, ownerId);
+             CMessageBox::Infomation(this, QString("你已经加入了群聊：'%1'").arg(groupId));
+        }
+        DatabaseMsg::getInstance()->addGroupMember(id, groupId, Member);
+    } else if(msg == QString("refuse")) {
+        CMessageBox::Infomation(this, QString("'%1'拒绝了你的添加群组申请").arg(name));
     }
 }
+
+void MainWindow::addGroupAccept(const QJsonValue &dataVal)
+{
+    if(!dataVal.isArray()){
+        qDebug() << "接受群组申请传输数据有误(不是数组)，无法将群用户插入到客户端数据库";
+        return;
+    }
+    QJsonArray jsonArr = dataVal.toArray();
+    foreach(QJsonValue json, jsonArr){
+        if(!json.isObject()){
+             qDebug() << "接受群组申请传输数据有误(不是对象)，无法将群用户插入到客户端数据库";
+             return;
+        }
+        QJsonObject jsonObj = json.toObject();
+        int groupId = jsonObj.value("groupId").toInt();
+        int userId = jsonObj.value("userId").toInt();
+        int identity = jsonObj.value("identity").toInt();
+        QString joinTime = jsonObj.value("joinTime").toString();
+        DatabaseMsg::getInstance()->addGroupMember(userId, groupId, joinTime, static_cast<GroupIdentity>(identity));
+    }
+}
+
 
 

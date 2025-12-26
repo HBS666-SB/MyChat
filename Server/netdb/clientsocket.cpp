@@ -323,8 +323,7 @@ void ClientSocket::ParseAddGroupRequist(const QJsonValue &dataVal)
     QJsonObject jsonObj = dataVal.toObject();
     int id = jsonObj.value("id").toInt();
     int groupId = jsonObj.value("groupId").toInt();
-//    bool isSuccess = DataBaseMag::getInstance()->addGroupMember(id, groupId, Member);
-    QJsonObject resObj;
+    QJsonObject resObj = jsonObj;
     resObj.insert("name", DataBaseMag::getInstance()->getUsernameFromId(QString::number(id)));  //要加群的人
     int targetId = DataBaseMag::getInstance()->getGroupOwner(groupId);  //群主Id
 
@@ -338,11 +337,6 @@ void ClientSocket::ParseAddGroupReply(const QJsonValue &dataVal)
         return;
     }
     QJsonObject jsonObj = dataVal.toObject();
-//    resObj.insert("id", MyApp::m_nId);  //群主Id
-//    resObj.insert("to", id);
-//    resObj.insert("groupId",groupId);
-//    resObj.insert("msg", QString("accept"));
-//    resObj.insert("msg", QString("refuse"));
     QString msg = jsonObj.value("msg").toString();
     int groupId = jsonObj.value("groupId").toInt();
     int to = jsonObj.value("to").toInt();
@@ -350,10 +344,16 @@ void ClientSocket::ParseAddGroupReply(const QJsonValue &dataVal)
     QJsonObject resObj;
     resObj.insert("groupId", groupId);
     resObj.insert("name", DataBaseMag::getInstance()->getUsernameFromId(QString::number(id)));    //群主名
-    if(msg == QString("accept")) {                                                  //接受通知所有群成员
+    resObj.insert("groupName", DataBaseMag::getInstance()->getGroupName(groupId));
+    resObj.insert("groupHead", DataBaseMag::getInstance()->getGroupHead(groupId));
+    resObj.insert("id", id);    //群主Id
+    resObj.insert("userName", DataBaseMag::getInstance()->getUsernameFromId(QString::number(to)));
+    resObj.insert("userId", to);
+    if(msg == QString("accept")) {                                                 //接受通知所有群成员
         DataBaseMag::getInstance()->addGroupMember(to, groupId, Member);
         resObj.insert("msg", QString("accept"));
         emit signalAddGroupMembers(groupId, to);
+        signalPrivateMsgToClient(id, to, AddGroupAccept, DataBaseMag::getInstance()->getGroupMember(groupId));
         signalGroupMsgToClient(id, groupId, AddGroupReply, QJsonValue(resObj));
     } else if(msg == QString("refuse")) {                                         //拒绝只发给申请的用户
         resObj.insert("msg", QString("refuse"));

@@ -333,18 +333,20 @@ void DatabaseMsg::removeFriend(const QString &friendName)
     }
 }
 
-void DatabaseMsg::AddGroup(const int &userId, const QString &groupName, const int &groupId)
+void DatabaseMsg::AddGroup(const int &userId, const QString &groupHead, const QString &groupName, const int &groupId)
 {
+    qDebug() << "添加群组" << userId << groupHead << groupName << groupId << "\n\n";
     if(userId < 0 || groupName.isEmpty()){
         qDebug() << "数据库插入群组失败";
         return;
     }
     QSqlQuery query(userdb);
     QString sql;
-    sql = QString("INSERT INTO GROUPS (group_id, group_name, creator_id) ");
-    sql.append("VALUES (:groupId, :groupName, :creatorId);");
+    sql = QString("INSERT INTO GROUPS (group_id, group_head, group_name, creator_id) ");
+    sql.append("VALUES (:groupId, :groupHead, :groupName, :creatorId);");
     query.prepare(sql);
     query.bindValue(":groupId", groupId);
+    query.bindValue(":groupHead", groupHead);
     query.bindValue(":groupName", groupName);
     query.bindValue(":creatorId", userId);
     if(!query.exec()){
@@ -372,7 +374,7 @@ QString DatabaseMsg::getGroupName(const int &groupId)
 bool DatabaseMsg::addGroupMember(const int &userId, const int &groupId, GroupIdentity identity)
 {
     if(userId < 0 || groupId < 0) return false;
-    QSqlQuery query;
+    QSqlQuery query(userdb);
     QString sql = "INSERT INTO GROUP_MEMBER (group_id, user_id, identity) VALUES (:groupId, :userId, :identity);";
     query.prepare(sql);
     query.bindValue(":groupId", groupId);
@@ -383,4 +385,20 @@ bool DatabaseMsg::addGroupMember(const int &userId, const int &groupId, GroupIde
         return false;
     }
     return true;
+}
+
+void DatabaseMsg::addGroupMember(const int &userId, const int &groupId, const QString &joinTime, GroupIdentity identity)
+{
+    if(userId < 0 || groupId < 0) return;
+    QSqlQuery query(userdb);
+    QString sql = "INSERT INTO GROUP_MEMBER (group_id, user_id, identity, join_time) VALUES (:groupId, :userId, :joinTime, :identity);";
+    query.prepare(sql);
+    query.bindValue(":groupId", groupId);
+    query.bindValue(":userId", userId);
+    query.bindValue(":joinTime", joinTime);
+    query.bindValue(":identity", identity);
+    if(!query.exec()){
+        qDebug() << "添加群成员错误" << query.lastError();
+        return;
+    }
 }

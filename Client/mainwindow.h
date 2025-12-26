@@ -29,7 +29,7 @@ public:
     void createGroup(const QJsonValue &dataVal);
     void addGroupRequist(const QJsonValue &dataVal);
     void addGroupReply(const QJsonValue &dataVal);
-
+    void addGroupAccept(const QJsonValue &dataVal);
 private slots:
     void sltButtonClicked(int index);
     void SltTrayIcoClicked(QSystemTrayIcon::ActivationReason reason);   //托盘图标

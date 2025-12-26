@@ -54,8 +54,11 @@ public:
     int addGroup(const int &userId, const QString groupName);
     bool addGroupMember(const int &userId, const int &groupId, GroupIdentity identity = Member);
     int getGroupOwner(const int &groupId);
+    QString getGroupName(const int &groupId);
+    QString getGroupHead(const int &groupId);
 
     QHash<int, QSet<int>> initGroupMembersCache();
+    QJsonValue getGroupMember(const int &groupId);
 
 signals:
 
