@@ -47,6 +47,8 @@ public:
 
     //群组操作
     void AddGroup(const int &userId, const QString &groupName, const int &groupId);
+    QString getGroupName(const int &groupId);
+    bool addGroupMember(const int &userId, const int &groupId, GroupIdentity identity);
 
 
 private:

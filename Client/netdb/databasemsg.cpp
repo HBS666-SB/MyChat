@@ -353,3 +353,34 @@ void DatabaseMsg::AddGroup(const int &userId, const QString &groupName, const in
     }
 
 }
+
+QString DatabaseMsg::getGroupName(const int &groupId)
+{
+    QSqlQuery query(userdb);
+    QString sql;
+    sql = QString("SELECT group_name FROM GROUPS WHERE group_id = :groupId;");
+    query.prepare(sql);
+    query.bindValue(":groupId", groupId);
+    if(!query.exec()){
+        qDebug() << "获取群组名出错" << query.lastError();
+        return "";
+    }
+    query.next();
+    return query.value("group_name").toString();
+}
+
+bool DatabaseMsg::addGroupMember(const int &userId, const int &groupId, GroupIdentity identity)
+{
+    if(userId < 0 || groupId < 0) return false;
+    QSqlQuery query;
+    QString sql = "INSERT INTO GROUP_MEMBER (group_id, user_id, identity) VALUES (:groupId, :userId, :identity);";
+    query.prepare(sql);
+    query.bindValue(":groupId", groupId);
+    query.bindValue(":userId", userId);
+    query.bindValue(":identity", identity);
+    if(!query.exec()){
+        qDebug() << "添加群成员错误" << query.lastError();
+        return false;
+    }
+    return true;
+}

@@ -426,6 +426,17 @@ void MainWindow::sltStatus(const quint8 &status, const QJsonValue &dataVal)
     case RefreshGroups:
     {
         showServerGroupsInfo(dataVal);
+        break;
+    }
+    case AddGroupRequist:
+    {
+        addGroupRequist(dataVal);
+        break;
+    }
+    case AddGroupReply:
+    {
+        addGroupReply(dataVal);
+        break;
     }
     }
 }
@@ -661,6 +672,51 @@ void MainWindow::createGroup(const QJsonValue &dataVal)
     QString name = jsonObj.value("name").toString();
     int groupId = jsonObj.value("groupId").toInt();
     DatabaseMsg::getInstance()->AddGroup(MyApp::m_nId, name, groupId);
+    DatabaseMsg::getInstance()->addGroupMember(MyApp::m_nId, groupId, Owner);
+}
+
+void MainWindow::addGroupRequist(const QJsonValue &dataVal)
+{
+    if(!dataVal.isObject()){
+        qDebug() << "请求添加好友失败，服务器传输数据有误";
+        return;
+    }
+    QJsonObject jsonObj = dataVal.toObject();
+    int id = jsonObj.value("id").toInt();   //申请人的Id
+    QString name = jsonObj.value("name").toString();    //申请加群的用户名
+    int groupId = jsonObj.value("groupId").toInt();
+    QString groupName = DatabaseMsg::getInstance()->getGroupName(groupId);
+    int res = CMessageBox::Question(this, QString("'%1'申请添加群聊'%2'").arg(name).arg(groupName));
+    QJsonObject resObj;
+    resObj.insert("id", MyApp::m_nId);  //群主Id
+    resObj.insert("to", id);
+    resObj.insert("groupId",groupId);
+    if(res == QDialog::Accepted) {
+        resObj.insert("msg", QString("accept"));
+        DatabaseMsg::getInstance()->addGroupMember(id, groupId, Member);
+        m_tcpSocket->sendMessage(AddGroupReply, QJsonValue(resObj));
+    } else {
+        resObj.insert("msg", QString("refuse"));
+        m_tcpSocket->sendMessage(AddGroupReply, QJsonValue(resObj));
+    }
+}
+
+void MainWindow::addGroupReply(const QJsonValue &dataVal)
+{
+    if(!dataVal.isObject()){
+        qDebug() << "添加好友回复有错误，服务器传输数据有误";
+        return;
+    }
+    QJsonObject jsonObj = dataVal.toObject();
+    //    resObj.insert("groupId", groupId);
+    //    resObj.insert("name", DataBaseMag::getInstance()->getUsernameFromId(QString::number(id)));    //群主名
+    int groupId = jsonObj.value("groupId").toInt();
+    QString name = jsonObj.value("name").toString();
+    QString msg = jsonObj.value("msg").toString();
+    if(msg == QString("accept")) {
+        CMessageBox::Infomation(this, QString("你已经加入了群聊：'%1'").arg(groupId));
+
+    }
 }
 
 

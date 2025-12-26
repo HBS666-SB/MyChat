@@ -37,6 +37,7 @@ void MyServer::CloseListen()
 // 消息服务器
 TcpMsgServer::TcpMsgServer(QObject *parent)
 {
+    m_groupMembersCache = DataBaseMag::getInstance()->initGroupMembersCache();
 }
 
 TcpMsgServer::~TcpMsgServer()
@@ -45,9 +46,6 @@ TcpMsgServer::~TcpMsgServer()
 
 void TcpMsgServer::insertMessageQueue(const int &send, const int &getId, const QJsonValue &jsonVal, const quint8 &type)
 {
-    //    resObj.insert("requestName",senderName);
-    //    resObj.insert("requestId",senderId);
-    //    resObj.insert("acceptId",friendId);
     if (!jsonVal.isObject())
     {
         qDebug() << "server插入消息队列逻辑有误";
@@ -83,6 +81,18 @@ void TcpMsgServer::sendUserMessageQueue(const QString &userId) // 上线的Id
     }
 }
 
+void TcpMsgServer::SltAddGroupMembers(const int &groupId, const int &userId)
+{
+    if(groupId < 0 || userId < 0) return;
+    m_groupMembersCache[groupId].insert(userId);
+}
+
+void TcpMsgServer::SltRemoveGroupMembers(const int &groupId, const int &userId)
+{
+    if(groupId < 0 || userId < 0) return;
+    m_groupMembersCache[groupId].remove(userId);
+}
+
 void TcpMsgServer::SltTransFileToClient(const int &userId, const QJsonValue &jsonVal)
 {
 }
@@ -97,6 +107,9 @@ void TcpMsgServer::SltNewConnection()
     connect(client, &ClientSocket::signalDisConnected, this, &TcpMsgServer::SltDisConnected);
     connect(client, &ClientSocket::signalLoginSuccess, this, &TcpMsgServer::SltLoginSuccess);
     connect(client, &ClientSocket::signalPrivateMsgToClient, this, &TcpMsgServer::SltPrivateMsgToClient);
+    connect(client, &ClientSocket::signalGroupMsgToClient, this, &TcpMsgServer::SltGroupMsgToClient);
+    connect(client, &ClientSocket::signalAddGroupMembers, this, &TcpMsgServer::SltAddGroupMembers);
+    connect(client, &ClientSocket::signalRemoveGroupMembers, this, &TcpMsgServer::SltRemoveGroupMembers);
 
     qDebug() << "[消息服务器] 新客户端连接！socketDescriptor：";
 }
@@ -114,7 +127,15 @@ void TcpMsgServer::SltDisConnected()
     disconnect(client, &ClientSocket::signalDisConnected, this, &TcpMsgServer::SltDisConnected);
     disconnect(client, &ClientSocket::signalLoginSuccess, this, &TcpMsgServer::SltLoginSuccess);
     disconnect(client, &ClientSocket::signalPrivateMsgToClient, this, &TcpMsgServer::SltPrivateMsgToClient);
+    disconnect(client, &ClientSocket::signalGroupMsgToClient, this, &TcpMsgServer::SltGroupMsgToClient);
+    disconnect(client, &ClientSocket::signalAddGroupMembers, this, &TcpMsgServer::SltAddGroupMembers);
+    disconnect(client, &ClientSocket::signalRemoveGroupMembers, this, &TcpMsgServer::SltRemoveGroupMembers);
     client->deleteLater();
+}
+
+void TcpMsgServer::SltPublicMsgToClient(const int &id, const quint8 &type, const QJsonValue &json)
+{
+
 }
 
 void TcpMsgServer::SltPrivateMsgToClient(const int &id, const int &targetId, const quint8 &type, const QJsonValue &jsonVal)
@@ -135,6 +156,39 @@ void TcpMsgServer::SltPrivateMsgToClient(const int &id, const int &targetId, con
     // 转发
     targetClient->SltSendMessage(type, QJsonValue(jsonVal));
     //    qDebug() << "server.cpp转发出去135" << jsonVal;
+}
+
+void TcpMsgServer::SltGroupMsgToClient(const int &id, const int &groupId, const quint8 &type, const QJsonValue &json)
+{
+    if(groupId < 0) {
+        qDebug() << "组播目标出现错误";
+        return;
+    }
+    QSet<int> groupSet = m_groupMembersCache[groupId];
+    QList<int> memberList = groupSet.toList();
+    for (int i = 0; i < memberList.size(); i += BATCH_SIZE) {
+        // 截取当前批次的成员ID
+        QList<int> batch = memberList.mid(i, BATCH_SIZE);
+        // 异步发送，不阻塞主线程
+        QMetaObject::invokeMethod(this, [=]() {
+            int batchSendCount = 0;
+            int batchOfflineCount = 0;
+            for (int userId : batch) {
+                if (userId == id) continue;
+                ClientSocket *client = m_clientHash.value(QString::number(userId), nullptr);
+                if (client) {
+                    SltPrivateMsgToClient(id, userId, type, json);
+                    batchSendCount++;
+                } else {
+                    insertMessageQueue(id, userId, json, type);
+                    batchOfflineCount++;
+                }
+            }
+            qDebug() << QString("[群聊分批] 群组ID=%1 批次%2 成功=%3 离线=%4")
+                        .arg(groupId).arg(i/BATCH_SIZE + 1).arg(batchSendCount).arg(batchOfflineCount);
+        }, Qt::QueuedConnection);
+    }
+
 }
 
 void TcpMsgServer::SltLoginSuccess(ClientSocket *client, const QString &userId)
@@ -268,7 +322,7 @@ void TcpFileServer::incomingConnection(qintptr socketDescriptor)
     connect(fileSocket, &FileSocket::recvFinished, this, &TcpFileServer::onFileRecvFinished, Qt::QueuedConnection);
     connect(fileSocket, &FileSocket::taskFailed, this, &TcpFileServer::onTaskFailed, Qt::QueuedConnection);
     connect(fileSocket, &FileSocket::destroyed, this, [=]()
-            {
+    {
         // FileSocket销毁时，从客户端列表移除（按指针匹配）
         QMutexLocker locker(&m_clientMutex);
         QString foundKey;

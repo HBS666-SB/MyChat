@@ -25,6 +25,10 @@ signals:
     void signalLoginSuccess(ClientSocket *client, const QString &userId);
     //id发给targetId
     void signalPrivateMsgToClient(const int &id,const int &targetId, const quint8 &type, const QJsonValue &json);
+    void signalGroupMsgToClient(const int &id, const int &groupId, const quint8 &type, const QJsonValue &json);
+    void signalAddGroupMembers(const int &groupId, const int &userId);
+    void signalRemoveGroupMembers(const int &groupId, const int &userId);
+
 public slots:
 
 private:
@@ -51,7 +55,8 @@ private:
     void ParseReister(const QJsonValue &dataVal);
     void ParseAddFriend(const QJsonValue &dataVal);
     void ParseAddFriendReply(const QJsonValue &dataVal);
-    void ParseAddGroup(const QJsonValue &dataVal);
+    void ParseAddGroupRequist(const QJsonValue &dataVal);
+    void ParseAddGroupReply(const QJsonValue &dataVal);
     void ParseCreateGroup(const QJsonValue &dataVal);
 
     void ParseGetMyFriend(const QJsonValue &dataVal);

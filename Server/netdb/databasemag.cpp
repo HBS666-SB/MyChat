@@ -568,6 +568,24 @@ int DataBaseMag::getGroupOwner(const int &groupId)
     return query.value("creator_id").toInt();
 }
 
+QHash<int, QSet<int> > DataBaseMag::initGroupMembersCache()
+{
+    QHash<int, QSet<int> > hashSet;
+    QString sql = "SELECT group_id, user_id FROM GROUP_MEMBER";
+    QSqlQuery query(sql);
+    if(!query.exec()) {
+        qDebug() << "初始化群组成员错误";
+        return hashSet;
+    }
+    while(query.next()) {
+        int groupId = query.value(0).toInt();
+        int userId = query.value(1).toInt();
+        hashSet[groupId].insert(userId);
+    }
+    qDebug() << "服务器启动：加载" << hashSet.size() << "个群组的成员缓存";
+    return hashSet;
+}
+
 void DataBaseMag::queryAll()
 {
 

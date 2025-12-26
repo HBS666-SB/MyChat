@@ -54,6 +54,7 @@ private:
     // 客户端管理
     QVector < ClientSocket * > m_clients;   //广播快
     QHash<QString, ClientSocket*> m_clientHash;  //单播快
+    QHash<int, QSet<int>> m_groupMembersCache;  //群号 -> 群成员
 public slots:
     void SltTransFileToClient(const int &userId, const QJsonValue &jsonVal);
 
@@ -61,11 +62,14 @@ private slots:
     void SltNewConnection();
     void SltConnected();
     void SltDisConnected();
-//    void SltPublicMsgToClient(const quint8 &type, const int &id, const QJsonValue &json); //广播
+    void SltPublicMsgToClient(const int &id, const quint8 &type, const QJsonValue &json); //广播
     //id发给targetId
     void SltPrivateMsgToClient(const int &id, const int &targetId, const quint8 &type, const QJsonValue &json);    //单播
+    void SltGroupMsgToClient(const int &id, const int &groupId, const quint8 &type, const QJsonValue &json);    //组播
 
     void SltLoginSuccess(ClientSocket *client, const QString &userId);
+    void SltAddGroupMembers(const int &groupId, const int &userId);
+    void SltRemoveGroupMembers(const int &groupId, const int &userId);
 };
 
 

@@ -54,6 +54,9 @@ public:
     int addGroup(const int &userId, const QString groupName);
     bool addGroupMember(const int &userId, const int &groupId, GroupIdentity identity = Member);
     int getGroupOwner(const int &groupId);
+
+    QHash<int, QSet<int>> initGroupMembersCache();
+
 signals:
 
 public slots:

@@ -223,6 +223,16 @@ void MySocket::sendMsgType(const quint8 &nType, const QJsonValue &dataVal)
         emit signalStatus(RefreshGroups, dataVal);
         break;
     }
+    case AddGroupRequist:
+    {
+        emit signalStatus(AddGroupRequist, dataVal);
+        break;
+    }
+    case AddGroupReply:
+    {
+        emit signalStatus(AddGroupReply, dataVal);
+        break;
+    }
     }
 }
 

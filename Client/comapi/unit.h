@@ -138,7 +138,7 @@ typedef enum {
     AddFriendReply,                 //添加好友回复
     AddGroupReply,
 
-    CreateGroup         = 0x25,     // 创建群组
+    CreateGroup         = 0x26,     // 创建群组
 
     GetMyFriends        = 0x30,     // 上线获取我的好友的状态
     GetMyGroups,                    // 获取我的群组信息

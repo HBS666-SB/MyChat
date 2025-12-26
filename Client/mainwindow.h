@@ -27,6 +27,8 @@ public:
     void showServerGroupsInfo(const QJsonValue &dataVal);   //显示服务器发送来得到群组信息
     void receiveMessage(const QJsonValue &dataVal);     //解析消息数据
     void createGroup(const QJsonValue &dataVal);
+    void addGroupRequist(const QJsonValue &dataVal);
+    void addGroupReply(const QJsonValue &dataVal);
 
 private slots:
     void sltButtonClicked(int index);
