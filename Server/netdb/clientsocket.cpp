@@ -108,6 +108,11 @@ void ClientSocket::sendMsgType(const quint8 &nType, const QJsonValue &dataVal)
         ParseAddGroupReply(dataVal);
         break;
     }
+    case SendGroupMsg:
+    {
+        ParseSendGroupMsg(dataVal);
+        break;
+    }
     }
 }
 
@@ -499,4 +504,23 @@ void ClientSocket::ParseSendFile(const QJsonValue &dataVal)
     resObj.insert("type", jsonObj.value("type").toInt());
 
     emit signalPrivateMsgToClient(m_nId, jsonObj.value("to").toInt(), SendFile, QJsonValue(resObj));
+}
+
+void ClientSocket::ParseSendGroupMsg(const QJsonValue &dataVal)
+{
+    if(!dataVal.isObject()){
+        qDebug() << "发送群组信息出错";
+        return;
+    }
+    QJsonObject jsonObj = dataVal.toObject();
+    int type = jsonObj.value("type").toInt();
+    int groupId = jsonObj.value("id").toInt();
+    if(type == Files) {
+        groupId = jsonObj.value("to").toInt();
+    }
+    jsonObj.insert("head", DataBaseMag::getInstance()->getUserHead(m_nId));
+    jsonObj.insert("userId", m_nId);
+    jsonObj.insert("name", DataBaseMag::getInstance()->getUsernameFromId(QString::number(m_nId)));
+    qDebug() << type;
+    emit signalGroupMsgToClient(m_nId, groupId, SendGroupMsg, QJsonValue(jsonObj));
 }

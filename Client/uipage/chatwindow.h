@@ -34,6 +34,8 @@ public:
     QString getUserHead();
     void AddMessage(const QJsonValue &jsonVal);
     QVector<ItemInfo *> getHistoryMsg();
+    void SetIsGroup();
+    bool getIsGroup();
 public slots:
     void sltWheelUp();
     void sendFaceMsg(int index);
@@ -82,6 +84,7 @@ private:
     //    quint8 m_nFileType;
     quint8 m_nChatType; // 聊天类型，群组聊天或私人聊天
     bool m_isEnterSend = true;
+    bool m_isGroup;
 
 public:
     static int count;

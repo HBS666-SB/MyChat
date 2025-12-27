@@ -599,7 +599,7 @@ QString DataBaseMag::getGroupHead(const int &groupId)
 QHash<int, QSet<int> > DataBaseMag::initGroupMembersCache()
 {
     QHash<int, QSet<int> > hashSet;
-    QString sql = "SELECT group_id, user_id FROM GROUP_MEMBER";
+    QString sql = "SELECT group_id, user_id FROM GROUP_MEMBER;";
     QSqlQuery query(sql);
     if(!query.exec()) {
         qDebug() << "初始化群组成员错误";

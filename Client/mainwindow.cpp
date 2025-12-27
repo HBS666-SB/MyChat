@@ -150,7 +150,6 @@ void MainWindow::InitQQListMenu()
     //***********疑惑************
     QMenu *groupListMenu = new QMenu(tr("移动联系人至"));
     childMenu->addMenu(groupListMenu);
-
     // childMenu->addAction(tr("创建讨论组"));
     connect(childMenu, SIGNAL(triggered(QAction*)), this, SLOT(onChildPopMenuDidSelected(QAction*)));
     ui->frindListWidget->setChildPopMenu(childMenu);
@@ -169,6 +168,7 @@ void MainWindow::InitQQListMenu()
     QMenu *groupChildMen = new QMenu(this);
     groupChildMen->addAction(tr("发送即时消息"));
     ui->groupListWidget->setChildPopMenu(groupChildMen);
+    connect(groupChildMen, &QMenu::triggered, this, &MainWindow::onGroupMenuDidSelected);
 
     //添加默认项
     QQCell *groupCell = new QQCell;
@@ -439,8 +439,14 @@ void MainWindow::sltStatus(const quint8 &status, const QJsonValue &dataVal)
         break;
     }
     case AddGroupAccept:
+    {
         addGroupAccept(dataVal);
         break;
+    }
+    case SendGroupMsg:
+    {
+        sendGroupMsg(dataVal);
+    }
     }
 }
 
@@ -456,12 +462,51 @@ void MainWindow::SltFriendChatWindowClose()
         this->show();
     }
     m_chatFriendWindows.removeOne(chatWindow);
-    //    chatWindow->deleteLater();
+}
+
+void MainWindow::SltGroupChatWindowClose()
+{
+    ChatWindow *chatWindow = (ChatWindow*)sender();
+
+    disconnect(chatWindow,&ChatWindow::signalSendMessage, m_tcpSocket,&MySocket::sendMessage);
+    disconnect(chatWindow,&ChatWindow::signalClose, this,&MainWindow::SltGroupChatWindowClose);
+
+    if(!this->isVisible() && m_chatGroupWindows.size() == 1){
+        this->show();
+    }
+    m_chatGroupWindows.removeOne(chatWindow);
 }
 
 void MainWindow::SltGroupsClicked(QQCell *cell)
 {
+    for(ChatWindow *window : m_chatGroupWindows){
+        if(window->getUserId() == cell->id){
+            qDebug() << cell->id;
+            window->show();
+            window->raise();    //置于最顶层
+            return;
+        }
+    }
+    ChatWindow *chatWindow = new ChatWindow();
+    chatWindow->SetIsGroup();
+    connect(chatWindow,&ChatWindow::signalSendMessage, m_tcpSocket,&MySocket::sendMessage);
+    connect(chatWindow,&ChatWindow::signalClose, this,&MainWindow::SltGroupChatWindowClose);
+    chatWindow->setCell(cell);
+    chatWindow->show();
 
+    m_chatGroupWindows.append(chatWindow);
+}
+
+void MainWindow::onGroupMenuDidSelected(QAction *action)
+{
+    qDebug() << "右键群组框";
+    QQCell *cell = ui->groupListWidget->GetRightClickedCell();
+    if (nullptr == cell) return;
+    if(!action->text().compare(tr("发送即时消息")))
+    {
+        qDebug() << "group message" << cell->id;
+        SltGroupsClicked(cell);
+    }
 }
 
 void MainWindow::addFriendRequist(const QJsonValue &dataVal)
@@ -748,6 +793,50 @@ void MainWindow::addGroupAccept(const QJsonValue &dataVal)
         QString joinTime = jsonObj.value("joinTime").toString();
         DatabaseMsg::getInstance()->addGroupMember(userId, groupId, joinTime, static_cast<GroupIdentity>(identity));
     }
+}
+
+void MainWindow::sendGroupMsg(const QJsonValue &dataVal)
+{
+    if(!dataVal.isObject()){
+            qDebug() << "消息解析失败";
+            return;
+        }
+        QJsonObject jsonObj = dataVal.toObject();
+        int groupId = jsonObj.value("id").toInt();   //群组的Id
+        int userId = jsonObj.value("userId").toInt();
+        QString userName = jsonObj.value("name").toString();
+        QString msg = jsonObj.value("msg").toString();
+        QString head = jsonObj.value("head").toString();
+        int type = jsonObj.value("type").toInt();
+        if(type == Face) msg = QString::number(jsonObj.value("msg").toInt());
+        qDebug() << "msg" << msg << "type" << type;
+        foreach(ChatWindow* window, m_chatGroupWindows){
+            if(window->getUserId() == groupId){
+                window->AddMessage(dataVal);
+                return;
+            }
+        }
+
+        //下面写没有开启这个好友聊天窗口时的逻辑（已经包含上线转发）
+        ItemInfo *itemInfo = new ItemInfo(this);
+        itemInfo->SetName(userName);
+        itemInfo->SetDatetime(QDateTime::currentDateTime().toString("MM-dd HH:mm"));
+        itemInfo->SetHeadPixmap(MyApp::m_strHeadPath + head);
+        itemInfo->SetMsgType(static_cast<quint8>(type));
+        if(static_cast<quint8>(type) == Text){
+            itemInfo->SetText(msg);
+        }else if(static_cast<quint8>(type) == Face){
+            itemInfo->SetFace(msg.toInt());
+        }else if(static_cast<quint8>(type) == Files){
+            itemInfo->SetText(msg);
+            itemInfo->SetFileSizeString(jsonObj.value("size").toString());
+        }
+        itemInfo->SetMsgType(static_cast<quint8>(type));
+        itemInfo->SetOrientation(Left);
+        DatabaseMsg::getInstance()->AddGroupHistoryMsg(userId, groupId, itemInfo);
+
+        delete itemInfo;
+        itemInfo = nullptr;
 }
 
 

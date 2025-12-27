@@ -103,19 +103,31 @@ bool DatabaseMsg::OpenMessageDatabase(const QString &dataName)
     sql.append(QString("user_id INTEGER NOT NULL,")); // 好友的Id
     sql.append(QString("name VARCHAR(20) NOT NULL,"));
     sql.append(QString("head VARCHAR(100) DEFAULT 'default.png',"));
-    sql.append(QString("datetime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,"));
+    sql.append(QString("datetime TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,"));
     sql.append(QString("filesize VARCHAR(30) DEFAULT '',"));
     sql.append(QString("content VARCHAR(1000) NOT NULL,"));
     sql.append(QString("type INTEGER NOT NULL DEFAULT 0,"));
     sql.append(QString("direction INTEGER NOT NULL DEFAULT 0);"));
-
     if (!query.exec(sql))
     {
-        qDebug() << "创建消息表MSGINFO失败" << query.lastError();
-        msgdb.close();
-        return false;
+        qDebug() << "【Msg数据库】创建MSGINFO表失败：" << query.lastError().text();
     }
 
+    sql = QString("CREATE TABLE IF NOT EXISTS GROUPMSGINFO (");
+    sql.append(QString("id INTEGER PRIMARY KEY AUTOINCREMENT,"));
+    sql.append(QString("group_id INTEGER NOT NULL,"));
+    sql.append(QString("user_id INTEGER NOT NULL,")); // 发消息用户的Id
+    sql.append(QString("name VARCHAR(20) NOT NULL,"));
+    sql.append(QString("head VARCHAR(100) DEFAULT 'default.png',"));
+    sql.append(QString("datetime TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,"));
+    sql.append(QString("filesize VARCHAR(30) DEFAULT '',"));
+    sql.append(QString("content VARCHAR(1000) NOT NULL,"));
+    sql.append(QString("type INTEGER NOT NULL DEFAULT 0,"));
+    sql.append(QString("direction INTEGER NOT NULL DEFAULT 0);"));
+    if (!query.exec(sql))
+    {
+        qDebug() << "【Msg数据库】创建GROUPMSGINFO表失败：" << query.lastError().text();
+    }
     return true;
 }
 
@@ -250,6 +262,46 @@ void DatabaseMsg::AddHistoryMsg(const int &userId, ItemInfo *itemInfo)
         qDebug() << "插入历史消息出错" << query.lastError();
     }
     //    qDebug() << "插入到数据库消息：" << "content" << itemInfo->getFace() << "type" << itemInfo->GetMsgType();
+}
+
+void DatabaseMsg::AddGroupHistoryMsg(const int &userId, const int &groupId, ItemInfo *itemInfo)
+{
+    if (userId < 0 || groupId < 0)
+    {
+        qDebug() << "添加群组历史消息出错userId < 0或groupId < 0";
+        return;
+    }
+    QSqlQuery query(msgdb);
+    QString sql;
+    sql = QString("INSERT INTO GROUPMSGINFO (group_id, user_id, name, head, datetime, filesize, content, type, direction) ");
+    sql.append("VALUES (:groupId, :userId, :name, :head, :datetime, :filesize, :content, :type, :direction);");
+    query.prepare(sql);
+    query.bindValue(":groupId", groupId);
+    query.bindValue(":userId", userId);
+    query.bindValue(":name", itemInfo->GetName());
+    query.bindValue(":head", itemInfo->GetStrPixmap());
+    query.bindValue(":datetime", itemInfo->GetDatetime());
+    query.bindValue(":filesize", itemInfo->GetFileSizeString());
+    if (itemInfo->GetMsgType() == Text || itemInfo->GetMsgType() == Files)
+    {
+        query.bindValue(":content", itemInfo->GetText());
+    }
+    else if (itemInfo->GetMsgType() == Face)
+    {
+        query.bindValue(":content", QString::number(itemInfo->getFace()));
+    }
+    else
+    {
+        // 保证 content 字段不会为 NULL
+        query.bindValue(":content", QString(""));
+    }
+    query.bindValue(":type", static_cast<int>(itemInfo->GetMsgType()));
+    query.bindValue(":direction", itemInfo->GetOrientation());
+
+    if (!query.exec())
+    {
+        qDebug() << "插入历史消息出错" << query.lastError();
+    }
 }
 
 QVector<QJsonObject> DatabaseMsg::getHistoryMsg(const int &id, const int &count)

@@ -29,14 +29,12 @@ MainWindow::MainWindow(QWidget *parent) :
     m_buttonGroup->addButton(ui->btnDataBackup,5);
 
     connect(m_buttonGroup,SIGNAL(buttonClicked(int)),this,SLOT(sltButtonClicked(int)));
-
+    DataBaseMag::getInstance()->openDatabase(QString("%1server.db").arg(MyApp::m_strDatabasePath)); //打开数据库
     m_tcpServer = new TcpMsgServer(this);
     m_tcpServer->StartListen(60101);
     m_tcpFileServer = new TcpFileServer(this);
     m_tcpFileServer->StartListen(60102);
     ui->labelHostAddr->setText("本机IP：" + myHelper::GetIP());
-    DataBaseMag::getInstance()->openDatabase(QString("%1server.db").arg(MyApp::m_strDatabasePath)); //打开数据库
-
 }
 
 MainWindow::~MainWindow()

@@ -38,6 +38,7 @@ void MyServer::CloseListen()
 TcpMsgServer::TcpMsgServer(QObject *parent)
 {
     m_groupMembersCache = DataBaseMag::getInstance()->initGroupMembersCache();
+    qDebug() << m_groupMembersCache;
 }
 
 TcpMsgServer::~TcpMsgServer()
@@ -164,6 +165,7 @@ void TcpMsgServer::SltGroupMsgToClient(const int &id, const int &groupId, const 
         qDebug() << "组播目标出现错误";
         return;
     }
+    qDebug() << "组播" << id << groupId << json;
     QSet<int> groupSet = m_groupMembersCache[groupId];
     QList<int> memberList = groupSet.toList();
     for (int i = 0; i < memberList.size(); i += BATCH_SIZE) {

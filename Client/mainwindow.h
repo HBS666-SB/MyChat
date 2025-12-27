@@ -30,6 +30,7 @@ public:
     void addGroupRequist(const QJsonValue &dataVal);
     void addGroupReply(const QJsonValue &dataVal);
     void addGroupAccept(const QJsonValue &dataVal);
+    void sendGroupMsg(const QJsonValue &dataVal);
 private slots:
     void sltButtonClicked(int index);
     void SltTrayIcoClicked(QSystemTrayIcon::ActivationReason reason);   //托盘图标
@@ -47,8 +48,9 @@ private slots:
     void sltStatus(const quint8 &status,const QJsonValue &dataVal);
 
     void SltFriendChatWindowClose();
-
+    void SltGroupChatWindowClose();
     void SltGroupsClicked(QQCell *cell);
+    void onGroupMenuDidSelected(QAction *action);
 private:
     // 添加系统菜单处理
     void InitSysMenu();
@@ -63,6 +65,7 @@ private:
     QSystemTrayIcon *systemTrayIcon;
     bool m_bQuit;   // 主动退出操作时不进行断线匹配
     QList<ChatWindow *> m_chatFriendWindows;
+    QList<ChatWindow *> m_chatGroupWindows;
 
 };
 

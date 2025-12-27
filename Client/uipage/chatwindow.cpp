@@ -60,6 +60,8 @@ ChatWindow::ChatWindow(CustomMoveWidget *parent) : CustomMoveWidget(parent),
     setAttribute(Qt::WA_DeleteOnClose); // 关闭窗口即释放内存
     connect(ui->widgetBubble, SIGNAL(signalWheelUp()), this, SLOT(sltWheelUp()));
     connect(ui->widgetBubble, &BubbleList::signalDownloadFile, this, &ChatWindow::sltDownloadFile);
+
+    m_isGroup = false;
 }
 int ChatWindow::count = 0;
 
@@ -136,11 +138,20 @@ void ChatWindow::AddMessage(const QJsonValue &jsonVal) // 接收消息
     QJsonObject jsonObj = jsonVal.toObject();
     QString msg = jsonObj.value("msg").toString();
     int type = jsonObj.value("type").toInt();
-
+    if(type == Face && getIsGroup()) {
+        msg = QString::number(jsonObj.value("msg").toInt());
+    }
+    QString userName = jsonObj.value("name").toString();
+    QString head = jsonObj.value("head").toString();
     ItemInfo *itemInfo = new ItemInfo(this);
-    itemInfo->SetName(m_cell->name);
+    if(getIsGroup()){
+        itemInfo->SetName(userName);
+    } else {
+        itemInfo->SetName(m_cell->name);
+    }
+
     itemInfo->SetDatetime(QDateTime::currentDateTime().toString("MM-dd HH:mm"));
-    itemInfo->SetHeadPixmap(m_cell->iconPath);
+    itemInfo->SetHeadPixmap(head);
     if (Text == static_cast<quint8>(type))
     {
         itemInfo->SetText(msg);
@@ -159,14 +170,25 @@ void ChatWindow::AddMessage(const QJsonValue &jsonVal) // 接收消息
     itemInfo->SetOrientation(Left);
 
     ui->widgetBubble->addItem(itemInfo);
-    DatabaseMsg::getInstance()->AddHistoryMsg(m_cell->id, itemInfo);
+    if(getIsGroup()) {
+        int userId = jsonObj.value("userId").toInt();
+        int groupId = jsonObj.value("id").toInt();
+        DatabaseMsg::getInstance()->AddGroupHistoryMsg(userId, groupId, itemInfo);
+    }else {
+        DatabaseMsg::getInstance()->AddHistoryMsg(m_cell->id, itemInfo);
+    }
 }
 
 QVector<ItemInfo *> ChatWindow::getHistoryMsg()
 {
     QVector<ItemInfo *> itemArr;
+    QVector<QJsonObject> vJsonObj;
     //    name, head, datetime, fizesize, content, type, direction
-    QVector<QJsonObject> vJsonObj = DatabaseMsg::getInstance()->getHistoryMsg(m_cell->id, count++);
+    if(getIsGroup()){
+        qDebug() << "获取群组聊天记录";
+    } else{
+        vJsonObj = DatabaseMsg::getInstance()->getHistoryMsg(m_cell->id, count++);
+    }
     foreach (QJsonObject obj, vJsonObj)
     {
         ItemInfo *item = new ItemInfo(this);
@@ -189,6 +211,16 @@ QVector<ItemInfo *> ChatWindow::getHistoryMsg()
     return itemArr;
 }
 
+void ChatWindow::SetIsGroup()
+{
+    m_isGroup = true;
+}
+
+bool ChatWindow::getIsGroup()
+{
+    return m_isGroup;
+}
+
 void ChatWindow::sltWheelUp()
 {
     ui->widgetBubble->addItems(getHistoryMsg());
@@ -201,8 +233,11 @@ void ChatWindow::sendFaceMsg(int index)
     jsonObj.insert("msg", index);
     jsonObj.insert("type", Face);
     qDebug() << "发送信号";
-    emit signalSendMessage(SendFace, QJsonValue(jsonObj));
-
+    if(getIsGroup()){
+        emit signalSendMessage(SendGroupMsg, QJsonValue(jsonObj));
+    } else {
+        emit signalSendMessage(SendFace, QJsonValue(jsonObj));
+    }
     ItemInfo *itemInfo = new ItemInfo(this);
     itemInfo->SetName(MyApp::m_strUserName);
     itemInfo->SetDatetime(QDateTime::currentDateTime().toString("MM-dd HH:mm"));
@@ -214,7 +249,11 @@ void ChatWindow::sendFaceMsg(int index)
 
     ui->widgetBubble->addItem(itemInfo);
     ui->textEditMsg->clear();
-    DatabaseMsg::getInstance()->AddHistoryMsg(m_cell->id, itemInfo);
+    if(getIsGroup()){
+        DatabaseMsg::getInstance()->AddGroupHistoryMsg(MyApp::m_nId, getUserId(), itemInfo);
+    } else {
+        DatabaseMsg::getInstance()->AddHistoryMsg(m_cell->id, itemInfo);
+    }
 }
 
 void ChatWindow::sltDownloadFile(const QString &fileName)
@@ -358,8 +397,13 @@ void ChatWindow::on_btnSendMsg_clicked()
     QJsonObject jsonObj;
     jsonObj.insert("id", getUserId());
     jsonObj.insert("msg", msg);
+    jsonObj.insert("type", Text);
     qDebug() << "发送信号";
-    emit signalSendMessage(SendMsg, QJsonValue(jsonObj));
+    if(getIsGroup()){
+        emit signalSendMessage(SendGroupMsg, QJsonValue(jsonObj));
+    } else {
+        emit signalSendMessage(SendMsg, QJsonValue(jsonObj));
+    }
 
     ItemInfo *itemInfo = new ItemInfo(this);
     itemInfo->SetName(MyApp::m_strUserName);
@@ -370,7 +414,11 @@ void ChatWindow::on_btnSendMsg_clicked()
 
     ui->widgetBubble->addItem(itemInfo);
     ui->textEditMsg->clear();
-    DatabaseMsg::getInstance()->AddHistoryMsg(m_cell->id, itemInfo);
+    if(getIsGroup()){
+        DatabaseMsg::getInstance()->AddGroupHistoryMsg(MyApp::m_nId, getUserId(), itemInfo);
+    } else {
+        DatabaseMsg::getInstance()->AddHistoryMsg(m_cell->id, itemInfo);
+    }
 }
 
 void ChatWindow::on_btnSendFile_clicked()
@@ -399,12 +447,16 @@ void ChatWindow::on_btnSendFile_clicked()
     // 构造文件消息JSON（通知接收方）
     QJsonObject jsonObj;
     jsonObj.insert("id", MyApp::m_nId); // 发送方ID
-    jsonObj.insert("to", m_cell->id);   // 接收方ID
+    jsonObj.insert("to", getUserId());   // 接收方ID
     jsonObj.insert("msg", fileName);    // 文件名
     jsonObj.insert("size", fileSizeStr); // 格式化后的文件大小
-    jsonObj.insert("type", static_cast<int>(Files)); // 消息类型：文件
-    emit signalSendMessage(SendFile, jsonObj);
-
+//    jsonObj.insert("head", MyApp::m_strHeadFile);
+    jsonObj.insert("type", Files); // 消息类型：文件
+    if(getIsGroup()){
+        emit signalSendMessage(SendGroupMsg, jsonObj);
+    } else {
+        emit signalSendMessage(SendFile, jsonObj);
+    }
     // 本地UI显示文件消息
     ItemInfo *itemInfo = new ItemInfo(this);
     itemInfo->SetName(MyApp::m_strUserName);
@@ -417,7 +469,11 @@ void ChatWindow::on_btnSendFile_clicked()
 
     ui->widgetBubble->addItem(itemInfo);
     itemInfo->SetText(filePath);
-    DatabaseMsg::getInstance()->AddHistoryMsg(m_cell->id, itemInfo);
+    if(getIsGroup()){
+        DatabaseMsg::getInstance()->AddGroupHistoryMsg(MyApp::m_nId, getUserId(), itemInfo);
+    } else {
+        DatabaseMsg::getInstance()->AddHistoryMsg(m_cell->id, itemInfo);
+    }
 
     // 显示文件发送进度面板
     ui->widgetFileBoard->show();
@@ -428,7 +484,7 @@ void ChatWindow::on_btnSendFile_clicked()
     FileSocket *work = new FileSocket();
     work->moveToThread(fileSendThread);
     work->setFilePath(filePath);       // 设置发送文件路径
-    work->setLoadSize(8 * 1024);       // 8KB分片（可根据网络调整）
+    work->setLoadSize(8 * 1024);       // 8KB分片
     work->setUserId(QString::number(MyApp::m_nId)); // 设置用户ID
 
     // 信号连接

@@ -111,7 +111,7 @@ private slots:
     void onClientDisconnected(const QString &clientKey);
 
 private:
-    QThreadPool *m_threadPool;              // 自定义线程池（替代全局池，更易管理）
+    QThreadPool *m_threadPool;              // 自定义线程池
     QMutex m_clientMutex;                   // 客户端列表锁
     QHash<QString, FileSocket*> m_clientMap;// 客户端标识
     QString m_fileSaveDir;                  // 文件保存根目录
