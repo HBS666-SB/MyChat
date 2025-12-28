@@ -151,16 +151,12 @@ void ChatWindow::AddMessage(const QJsonValue &jsonVal) // 接收消息
     }
 
     itemInfo->SetDatetime(QDateTime::currentDateTime().toString("MM-dd HH:mm"));
-    itemInfo->SetHeadPixmap(head);
-    if (Text == static_cast<quint8>(type))
-    {
+    itemInfo->SetHeadPixmap(MyApp::m_strHeadPath + head);
+    if (Text == static_cast<quint8>(type)) {
         itemInfo->SetText(msg);
-    }
-    else if (Face == static_cast<quint8>(type))
-    {
+    } else if (Face == static_cast<quint8>(type)) {
         itemInfo->SetFace(msg.toInt());
-    }
-    else if (Files == static_cast<quint8>(type))
+    } else if (Files == static_cast<quint8>(type))
     {
         itemInfo->SetText(msg);
         itemInfo->SetFileSizeString(jsonObj.value("size").toString());
@@ -186,6 +182,7 @@ QVector<ItemInfo *> ChatWindow::getHistoryMsg()
     //    name, head, datetime, fizesize, content, type, direction
     if(getIsGroup()){
         qDebug() << "获取群组聊天记录";
+        vJsonObj = DatabaseMsg::getInstance()->getGroupHistoryMsg(getUserId(), count++);
     } else{
         vJsonObj = DatabaseMsg::getInstance()->getHistoryMsg(m_cell->id, count++);
     }
@@ -205,7 +202,13 @@ QVector<ItemInfo *> ChatWindow::getHistoryMsg()
         {
             item->SetFace(obj.value("content").toString().toInt());
         }
-        item->SetOrientation(m_cell->name == obj.value("name").toString() ? Left : Right);
+        if(getIsGroup()){
+            int userId = obj.value("user_id").toInt();
+            item->SetOrientation(userId != MyApp::m_nId ? Left : Right);
+        } else {
+            item->SetOrientation(m_cell->name == obj.value("name").toString() ? Left : Right);
+        }
+
         itemArr.append(item);
     }
     return itemArr;

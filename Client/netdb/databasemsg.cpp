@@ -338,6 +338,41 @@ QVector<QJsonObject> DatabaseMsg::getHistoryMsg(const int &id, const int &count)
     return vJsonObj;
 }
 
+QVector<QJsonObject> DatabaseMsg::getGroupHistoryMsg(const int &groupId, const int &count)
+{
+    const int maxCount = 10;
+    int n = 0;
+    qDebug() << "count = " << count;
+    QVector<QJsonObject> vJsonObj;
+    QSqlQuery query(msgdb);
+    QString sql;
+    sql = QString("SELECT user_id, name, head, datetime, filesize, content, type, direction FROM GROUPMSGINFO WHERE group_id = :groupId");
+    sql.append(" ORDER BY id DESC LIMIT 10 OFFSET :count");
+    query.prepare(sql);
+    query.bindValue(":groupId", groupId);
+    query.bindValue(":count", count * maxCount);
+    if (!query.exec())
+    {
+        qDebug() << "查询用户历史信息失败" << query.lastError();
+        return vJsonObj;
+    }
+    while (query.next() && n++ < maxCount)
+    {
+        QJsonObject Obj;
+        Obj.insert("user_id", query.value("user_id").toInt());
+        Obj.insert("name", query.value("name").toString());
+        Obj.insert("head", query.value("head").toString());
+        Obj.insert("datetime", query.value("datetime").toString());
+        Obj.insert("filesize", query.value("filesize").toString());
+        Obj.insert("content", query.value("content").toString());
+        Obj.insert("type", query.value("type").toInt());
+        Obj.insert("direction", query.value("direction").toInt());
+        vJsonObj.append(Obj);
+        //        qDebug() << Obj.value("content");
+    }
+    return vJsonObj;
+}
+
 bool DatabaseMsg::isMyFriend(QString friendName)
 {
 

@@ -809,6 +809,7 @@ void MainWindow::sendGroupMsg(const QJsonValue &dataVal)
         QString head = jsonObj.value("head").toString();
         int type = jsonObj.value("type").toInt();
         if(type == Face) msg = QString::number(jsonObj.value("msg").toInt());
+        if(type == Files) groupId = jsonObj.value("to").toInt();
         qDebug() << "msg" << msg << "type" << type;
         foreach(ChatWindow* window, m_chatGroupWindows){
             if(window->getUserId() == groupId){

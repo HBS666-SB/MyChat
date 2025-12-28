@@ -71,11 +71,10 @@ void TcpMsgServer::sendUserMessageQueue(const QString &userId) // 上线的Id
         int targetId = msg["accept_userId"].toInt();
         QString friendName = DataBaseMag::getInstance()->getUsernameFromId(QString::number(targetId));
         QJsonObject jsonObj = msg["data"].toJsonObject();
-        if(type != 66) {
+        if(type != SendGroupMsg && type != SendMsg &&type != SendFace &&type != SendFile &&type != SendPicture) {
             jsonObj.insert("type", type);
+            jsonObj.insert("name", friendName);
         }
-        jsonObj.insert("name", friendName);
-
         qDebug() << "myServer:80 转发离线队列消息给" << friendName;
         QJsonValue sendVal = jsonObj;
         SltPrivateMsgToClient(id, targetId, type, sendVal);

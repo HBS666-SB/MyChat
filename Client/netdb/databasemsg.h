@@ -43,6 +43,7 @@ public:
     void AddHistoryMsg(const int &userId, ItemInfo *itemInfo);
     void AddGroupHistoryMsg(const int &userId, const int &groupId, ItemInfo *itemInfo);
     QVector<QJsonObject> getHistoryMsg(const int &id, const int &count = 0);
+    QVector<QJsonObject> getGroupHistoryMsg(const int &groupId, const int &count = 0);
     bool isMyFriend(QString friendName);
     void removeFriend(const QString &friendName);
 
